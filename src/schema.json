@@ -1,0 +1,348 @@
+{
+  "type": "object",
+  "title": "esphome config",
+  "required": [
+    "esphome",
+    "esp32"
+  ],
+  "dallas": {
+    "type": "array",
+    "title": "The dallas Schema",
+    "items": {
+      "type": "object",
+      "default": {},
+      "title": "A Schema",
+      "required": [
+        "pin"
+      ],
+      "properties": {
+        "pin": {
+          "type": "integer",
+          "default": 15,
+          "title": "The pin Schema"
+        }
+      }
+    }
+  },
+  "properties": {
+    "esphome": {
+      "type": "object",
+      "default": null,
+      "title": "esphome section",
+      "required": [
+        "name"
+      ],
+      "properties": {
+        "name": {
+          "type": "string",
+          "default": "",
+          "title": "name of the board"
+        }
+      }
+    },
+    "esp32": {
+      "type": "object",
+      "title": "esp32 section",
+      "required": [
+        "board",
+        "framework"
+      ],
+      "properties": {
+        "board": {
+          "type": "string",
+          "default": "esp32doit-devkit-v1",
+          "title": "board name",
+          "enum": [
+            "esp32doit-devkit-v1",
+            "nodemcu-32s"
+          ]
+        },
+        "framework": {
+          "type": "object",
+          "title": "framework",
+          "required": [
+            "type"
+          ],
+          "properties": {
+            "type": {
+              "type": "string",
+              "default": "arduino",
+              "title": "framework type"
+            }
+          }
+        }
+      }
+    },
+    "logger": {
+      "type": "object",
+      "default": "test",
+      "title": "The logger Schema"
+    },
+    "api": {
+      "type": "object",
+      "title": "The api Schema",
+      "required": [
+        "password"
+      ],
+      "properties": {
+        "password": {
+          "type": "string",
+          "default": "",
+          "title": "The password Schema"
+        }
+      }
+    },
+    "ota": {
+      "type": "object",
+      "title": "The ota Schema",
+      "required": [
+        "password"
+      ],
+      "properties": {
+        "password": {
+          "type": "string",
+          "default": "",
+          "title": "The password Schema"
+        }
+      }
+    },
+    "wifi": {
+      "type": "object",
+      "default": "",
+      "title": "The wifi Schema",
+      "required": [
+        "ssid",
+        "password",
+        "ap"
+      ],
+      "properties": {
+        "ssid": {
+          "type": "string",
+          "title": "The ssid Schema"
+        },
+        "password": {
+          "type": "string",
+          "title": "The password Schema"
+        },
+        "ap": {
+          "type": "object",
+          "title": "The ap Schema",
+          "required": [
+            "ssid",
+            "password"
+          ],
+          "properties": {
+            "ssid": {
+              "type": "string",
+              "title": "The ssid Schema"
+            },
+            "password": {
+              "type": "string",
+              "default": "",
+              "title": "The password Schema"
+            }
+          }
+        }
+      }
+    },
+    "captive_portal": {
+      "type": "object",
+      "title": "The captive_portal Schema"
+    },
+    "i2c": {
+      "type": "object",
+      "title": "The i2c Schema",
+      "required": [
+        "sda",
+        "scl",
+        "scan",
+        "id"
+      ],
+      "properties": {
+        "sda": {
+          "type": "integer",
+          "default": 21,
+          "title": "sda pin"
+        },
+        "scl": {
+          "type": "integer",
+          "default": 22,
+          "title": "scl pin"
+        },
+        "scan": {
+          "type": "boolean",
+          "default": true,
+          "title": "device scan"
+        },
+        "id": {
+          "type": "string",
+          "default": "bus_a",
+          "title": "bus id"
+        }
+      }
+    },
+    "sensor": {
+      "type": "array",
+      "title": "sensors",
+      "items": {
+        "anyOf": [
+          {
+            "type": "object",
+            "title": "bme schema",
+            "required": [
+              "platform",
+              "temperature",
+              "pressure",
+              "humidity",
+              "address",
+              "update_interval"
+            ],
+            "properties": {
+              "platform": {
+                "const": "bme280",
+                "default": "bme280"
+              },
+              "temperature": {
+                "type": "object",
+                "default": {},
+                "title": "temperature sensor",
+                "required": [
+                  "name",
+                  "oversampling"
+                ],
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "default": "bme_temp",
+                    "title": "temperature sensor name"
+                  },
+                  "oversampling": {
+                    "type": "string",
+                    "default": "16x",
+                    "title": "oversampling"
+                  }
+                }
+              },
+              "pressure": {
+                "type": "object",
+                "default": {},
+                "title": "pressure sensor",
+                "required": [
+                  "name"
+                ],
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "default": "bme_pressure",
+                    "title": "pressure sensor name"
+                  }
+                }
+              },
+              "humidity": {
+                "type": "object",
+                "default": {},
+                "title": "humidity sensor",
+                "required": [
+                  "name"
+                ],
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "default": "bme_humidity",
+                    "title": "humidity sensor name"
+                  }
+                }
+              },
+              "address": {
+                "type": "string",
+                "default": "0x76",
+                "title": "address"
+              },
+              "update_interval": {
+                "type": "string",
+                "default": "60s",
+                "title": "update_interval"
+              }
+            }
+          },
+          {
+            "type": "object",
+            "title": "dht schema",
+            "required": [
+              "platform",
+              "temperature",
+              "humidity",
+              "pin"
+            ],
+            "properties": {
+              "platform": {
+                "const": "dht",
+                "default": "dht"
+              },
+              "temperature": {
+                "type": "object",
+                "default": {},
+                "title": "temperature sensor",
+                "required": [
+                  "name",
+                  "oversampling"
+                ],
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "default": "dht_temp",
+                    "title": "temperature sensor name"
+                  }
+                }
+              },
+              "humidity": {
+                "type": "object",
+                "title": "humidity sensor",
+                "required": [
+                  "name"
+                ],
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "default": "dht_humidity",
+                    "title": "humidity sensor name"
+                  }
+                }
+              },
+              "pin": {
+                "type": "string",
+                "default": "GPIO2",
+                "title": "pin"
+              }
+            }
+          },
+          {
+            "type": "object",
+            "title": "dallas schema",
+            "required": [
+              "platform",
+              "name",
+              "address"
+            ],
+            "properties": {
+              "platform": {
+                "const": "dallas",
+                "default": "dallas"
+              },
+              "name": {
+                "type": "string",
+                "default": "dallas_temp",
+                "title": "name"
+              },
+              "address": {
+                "type": "string",
+                "default": "0xdd3c01d075cdf928",
+                "title": "address"
+              }
+            }
+          }
+        ]
+      }
+    }
+  }
+}
