@@ -150,36 +150,17 @@
       "title": "The captive_portal Schema"
     },
     "i2c": {
-      "type": "object",
-      "title": "The i2c Schema",
-      "required": [
-        "sda",
-        "scl",
-        "scan",
-        "id"
-      ],
-      "properties": {
-        "sda": {
-          "type": "integer",
-          "default": 21,
-          "title": "sda pin"
-        },
-        "scl": {
-          "type": "integer",
-          "default": 22,
-          "title": "scl pin"
-        },
-        "scan": {
-          "type": "boolean",
-          "default": true,
-          "title": "device scan"
-        },
-        "id": {
-          "type": "string",
-          "default": "bus_a",
-          "title": "bus id"
-        }
-      }
+       "anyOf": [
+        { "$ref": "#/definitions/i2c", "title": "one i2c" },
+         {"type": "array",
+          "items": {  "allOf": [
+            { "$ref": "#/definitions/i2c" },
+            { "$ref": "#/definitions/bus_id" }
+          ]
+          } ,
+          "title": "multiple i2c"
+         }
+         ]
     },
     "sensor": {
       "type": "array",
@@ -342,6 +323,43 @@
             }
           }
         ]
+      }
+    }
+  },
+  "definitions": {
+    "i2c": {
+      "type": "object",
+      "title": "The i2c Schema",
+      "required": [
+        "sda",
+        "scl",
+        "scan"
+      ],
+      "properties": {
+        "sda": {
+          "type": "integer",
+          "default": 21,
+          "title": "sda pin"
+        },
+        "scl": {
+          "type": "integer",
+          "default": 22,
+          "title": "scl pin"
+        },
+        "scan": {
+          "type": "boolean",
+          "default": true,
+          "title": "device scan"
+        }
+      }
+    },
+    "bus_id": {
+      "properties": {
+        "bus_id": {
+          "type": "string",
+          "default": "bus_a",
+          "title": "i2c bus name"
+        }
       }
     }
   }
