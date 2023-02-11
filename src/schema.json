@@ -162,6 +162,17 @@
          }
          ]
     },
+	"adc": {
+		"anyOf":[
+			{ "$ref": "#/definitions/adc", "title": "one adc" },
+			{"type": "array",
+          "items": {  "allOf": [
+            { "$ref": "#/definitions/adc" }          
+			]
+          }
+         }
+		 ]
+	},
     "sensor": {
       "type": "array",
       "title": "sensors",
@@ -361,6 +372,44 @@
           "title": "i2c bus name"
         }
       }
+    },
+	"adc": {
+		"type": "object",
+		"title": "The adc Schema",
+    "required": [
+      "pin",
+      "name",
+      "attenuation",
+      "raw",
+      "update_interval"
+    ],
+    "properties": {
+      "pin": {
+        "type": "string",
+        "default": "A0",
+        "title": "adc pin"
+      },
+      "name": {
+        "type": "string",
+        "default": "",
+        "title": "name of the adc"
+      },
+      "attenuation": {
+        "type": "integer",
+        "default": 0,
+        "title": "attenuation adc"
+      },
+      "update_interval": {
+        "type": "string",
+        "default": "60s",
+        "title": "update_interval"
+      },
+      "raw": {
+        "type": "boolean",
+        "default": false,
+        "title": "raw adc"
+      }
     }
+	}
   }
 }
