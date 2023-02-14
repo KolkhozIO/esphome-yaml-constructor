@@ -189,6 +189,97 @@
         }
       ]
     },
+    "uart": {
+      "type": "object",
+      "default": "",
+      "title": "The uart Schema",
+      "required": [
+        "id",
+        "rx_pin",
+        "tx_pin",
+        "baud_rate",
+        "stop_bits"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "title": "The id Schema"
+        },
+        "rx_pin": {
+          "type": "string",
+          "title": "The rx_pin Schema"
+        },
+        "tx_pin": {
+          "type": "string",
+          "title": "The tx_pin Schema"
+        },
+        "baud_rate": {
+          "type": "integer",
+          "title": "The baud_rate Schema"
+        },
+        "stop_bits": {
+          "type": "integer",
+          "title": "The stop_bits Schema"
+        }
+      }
+    },
+    "modbus": {
+      "type": "object",
+      "default": "",
+      "title": "The modbus Schema",
+      "required": [
+        "id",
+        "flow_control_pin"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "title": "The id Schema"
+        },
+        "flow_control_pin": {
+          "type": "integer",
+          "title": "The flow_control_pin Schema"
+        }
+      }
+    },
+    "modbus_controller": {
+      "type": "array",
+      "title": "modbus_controller",
+      "items": {
+        "anyOf": [
+          {
+            "type": "object",
+            "title": "modbus_controller schema",
+            "required": [
+              "id",
+              "address",
+              "modbus_id",
+              "setup_priority"
+            ],
+            "properties": {
+              "id": {
+                "type": "string",
+                "default": "epever",
+                "title": "id"
+              },
+              "address": {
+                "type": "string",
+                "default": "0x1",
+                "title": "address"
+              },
+              "modbus_id": {
+                "type": "string",
+                "title": "modbus_id"
+              },
+              "setup_priority": {
+                "type": "integer",
+                "title": "setup_priority"
+              }
+            }
+          }
+        ]
+      }
+    },
     "sensor": {
       "type": "array",
       "title": "sensors",
@@ -407,6 +498,56 @@
                     "title": "humidity sensor name"
                   }
                 }
+              }
+            }
+          },
+          {
+            "type": "object",
+            "title": "modbus_controller schema",
+            "required": [
+              "platform",
+              "modbus_controller_id",
+              "name",
+              "id",
+              "register_type",
+              "address",
+              "unit_of_measurement",
+              "value_type"
+            ],
+            "properties": {
+              "platform": {
+                "const": "modbus_controller",
+                "default": "modbus_controller"
+              },
+              "modbus_controller_id": {
+                "type": "string",
+                "default": "epever",
+                "title": "modbus_controller_id"
+              },
+              "name": {
+                "type": "string",
+                "title": "name"
+              },
+              "id": {
+                "type": "string",
+                "title": "id"
+              },
+              "register_type": {
+                "type": "string",
+                "title": "register_type"
+              },
+              "address": {
+                "type": "string",
+                "default": "0x9001",
+                "title": "address"
+              },
+              "unit_of_measurement": {
+                "type": "string",
+                "title": "unit_of_measurement"
+              },
+              "value_type": {
+                "type": "string",
+                "title": "value_type"
               }
             }
           }
