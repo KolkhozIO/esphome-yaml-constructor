@@ -351,6 +351,31 @@
           },
           {
             "type": "object",
+            "title": "pulse counter schema",
+            "required": [
+              "platform",
+              "pin",
+              "name"
+            ],
+            "properties": {
+              "platform": {
+                "const": "pulse counter",
+                "default": "pulse counter"
+              },
+              "pin": {
+                "type": "string",
+                "default": "12",
+                "title": "pin"
+              },
+              "name": {
+                "type": "string",
+                "default": "pulse_counter_temp",
+                "title": "name"
+              }
+            }
+          },
+          {
+            "type": "object",
             "title": "scd4x schema",
             "required": [
               "platform",
