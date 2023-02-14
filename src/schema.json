@@ -348,6 +348,67 @@
                 "title": "address"
               }
             }
+          },
+          {
+            "type": "object",
+            "title": "scd4x schema",
+            "required": [
+              "platform",
+              "co2",
+              "temperature",
+              "humidity"
+            ],
+            "properties": {
+              "platform": {
+                "const": "scd4x",
+                "default": "scd4x"
+              },
+              "co2": {
+                "type": "object",
+                "default": {},
+                "title": "CO₂ sensor",
+                "required": [
+                  "name"
+                ],
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "default": "scd4x_co2",
+                    "title": "CO₂ sensor name"
+                  }
+                }
+              },
+              "temperature": {
+                "type": "object",
+                "default": {},
+                "title": "temperature sensor",
+                "required": [
+                  "name"
+                ],
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "default": "scd4x_temp",
+                    "title": "temperature sensor name"
+                  }
+                }
+              },
+              "humidity": {
+                "type": "object",
+                "default": {},
+                "title": "humidity sensor",
+                "required": [
+                  "name"
+                ],
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "default": "scd4x_hum",
+                    "title": "humidity sensor name"
+                  }
+                }
+              }
+            }
           }
         ]
       }
