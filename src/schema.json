@@ -145,6 +145,30 @@
         }
       }
     },
+    "uart": {
+      "type": "object",
+      "default": "",
+      "title": "The uart Schema",
+      "required": [
+        "rx_pin",
+        "tx_pin",
+        "baud_rate"
+      ],
+      "properties": {
+        "rx_pin": {
+          "type": "string",
+          "title": "The rx_pin Schema"
+        },
+        "tx_pin": {
+          "type": "string",
+          "title": "The tx_pin Schema"
+        },
+        "baud_rate": {
+          "type": "integer",
+          "title": "The baud_rate Schema"
+        }
+      }
+    },
     "captive_portal": {
       "type": "object",
       "title": "The captive_portal Schema"
@@ -430,6 +454,76 @@
                     "type": "string",
                     "default": "scd4x_hum",
                     "title": "humidity sensor name"
+                  }
+                }
+              }
+            }
+          },
+          {
+            "type": "object",
+            "title": "pulse counter schema",
+            "required": [
+              "platform",
+              "pin",
+              "name"
+            ],
+            "properties": {
+              "platform": {
+                "const": "pulse counter",
+                "default": "pulse counter"
+              },
+              "pin": {
+                "type": "string",
+                "default": "12",
+                "title": "pin"
+              },
+              "name": {
+                "type": "string",
+                "default": "pulse_counter_temp",
+                "title": "name"
+              }
+            }
+          },
+          {
+            "type": "object",
+            "title": "mhz19 schema",
+            "required": [
+              "platform",
+              "co2",
+              "temperature"
+            ],
+            "properties": {
+              "platform": {
+                "const": "mhz19",
+                "default": "mhz19"
+              },
+              "co2": {
+                "type": "object",
+                "default": {},
+                "title": "co_2 sensor",
+                "required": [
+                  "name"
+                ],
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "default": "mhz19_co2",
+                    "title": "co_2 sensor name"
+                  }
+                }
+              },
+              "temperature": {
+                "type": "object",
+                "default": {},
+                "title": "temperature sensor",
+                "required": [
+                  "name"
+                ],
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "default": "mhz19_temp",
+                    "title": "temperature sensor name"
                   }
                 }
               }
