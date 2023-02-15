@@ -15,9 +15,7 @@
       ],
       "properties": {
         "pin": {
-          "type": "integer",
-          "default": 15,
-          "title": "The pin Schema"
+          "$ref": "#/definitions/properties/pin"
         }
       }
     },
@@ -86,9 +84,7 @@
       ],
       "properties": {
         "password": {
-          "type": "string",
-          "default": "",
-          "title": "The password Schema"
+          "$ref": "#/definitions/properties/password"
         }
       }
     },
@@ -100,9 +96,7 @@
       ],
       "properties": {
         "password": {
-          "type": "string",
-          "default": "",
-          "title": "The password Schema"
+          "$ref": "#/definitions/properties/password"
         }
       }
     },
@@ -121,8 +115,7 @@
           "title": "The ssid Schema"
         },
         "password": {
-          "type": "string",
-          "title": "The password Schema"
+          "$ref": "#/definitions/properties/password"
         },
         "ap": {
           "type": "object",
@@ -137,9 +130,7 @@
               "title": "The ssid Schema"
             },
             "password": {
-              "type": "string",
-              "default": "",
-              "title": "The password Schema"
+              "$ref": "#/definitions/properties/password"
             }
           }
         }
@@ -171,57 +162,30 @@
         }
       ]
     },
-    "adc": {
+    "uart": {
       "anyOf": [
         {
-          "$ref": "#/definitions/adc",
-          "title": "one adc"
+          "$ref": "#/definitions/uart",
+          "title": "one uart"
         },
         {
           "type": "array",
           "items": {
             "allOf": [
               {
-                "$ref": "#/definitions/adc"
+                "$ref": "#/definitions/id"
+              },
+              {
+                "$ref": "#/definitions/uart"
+              },
+              {
+                "$ref": "#/definitions/stop_bits"
               }
             ]
-          }
+          },
+          "title": "multiple uart"
         }
       ]
-    },
-    "uart": {
-      "type": "object",
-      "default": "",
-      "title": "The uart Schema",
-      "required": [
-        "id",
-        "rx_pin",
-        "tx_pin",
-        "baud_rate",
-        "stop_bits"
-      ],
-      "properties": {
-        "id": {
-          "type": "string",
-          "title": "The id Schema"
-        },
-        "rx_pin": {
-          "type": "string",
-          "title": "The rx_pin Schema"
-        },
-        "tx_pin": {
-          "type": "string",
-          "title": "The tx_pin Schema"
-        },
-        "baud_rate": {
-          "type": "integer",
-          "title": "The baud_rate Schema"
-        },
-        "stop_bits": {
-          "type": "integer",
-          "title": "The stop_bits Schema"
-        }
-      }
     },
     "modbus": {
       "type": "object",
@@ -263,9 +227,7 @@
                 "title": "id"
               },
               "address": {
-                "type": "string",
-                "default": "0x1",
-                "title": "address"
+                "$ref": "#/definitions/properties/address"
               },
               "modbus_id": {
                 "type": "string",
@@ -286,340 +248,28 @@
       "items": {
         "anyOf": [
           {
-            "type": "object",
-            "title": "bme schema",
-            "required": [
-              "platform",
-              "temperature",
-              "pressure",
-              "humidity",
-              "address",
-              "update_interval"
-            ],
-            "properties": {
-              "platform": {
-                "const": "bme280",
-                "default": "bme280"
-              },
-              "temperature": {
-                "type": "object",
-                "default": {},
-                "title": "temperature sensor",
-                "required": [
-                  "name",
-                  "oversampling"
-                ],
-                "properties": {
-                  "name": {
-                    "type": "string",
-                    "default": "bme_temp",
-                    "title": "temperature sensor name"
-                  },
-                  "oversampling": {
-                    "type": "string",
-                    "default": "16x",
-                    "title": "oversampling"
-                  }
-                }
-              },
-              "pressure": {
-                "type": "object",
-                "default": {},
-                "title": "pressure sensor",
-                "required": [
-                  "name"
-                ],
-                "properties": {
-                  "name": {
-                    "type": "string",
-                    "default": "bme_pressure",
-                    "title": "pressure sensor name"
-                  }
-                }
-              },
-              "humidity": {
-                "type": "object",
-                "default": {},
-                "title": "humidity sensor",
-                "required": [
-                  "name"
-                ],
-                "properties": {
-                  "name": {
-                    "type": "string",
-                    "default": "bme_humidity",
-                    "title": "humidity sensor name"
-                  }
-                }
-              },
-              "address": {
-                "type": "string",
-                "default": "0x76",
-                "title": "address"
-              },
-              "update_interval": {
-                "type": "string",
-                "default": "60s",
-                "title": "update_interval"
-              }
-            }
+            "$ref": "#/definitions/sensor/bme"
           },
           {
-            "type": "object",
-            "title": "dht schema",
-            "required": [
-              "platform",
-              "temperature",
-              "humidity",
-              "pin"
-            ],
-            "properties": {
-              "platform": {
-                "const": "dht",
-                "default": "dht"
-              },
-              "temperature": {
-                "type": "object",
-                "default": {},
-                "title": "temperature sensor",
-                "required": [
-                  "name",
-                  "oversampling"
-                ],
-                "properties": {
-                  "name": {
-                    "type": "string",
-                    "default": "dht_temp",
-                    "title": "temperature sensor name"
-                  }
-                }
-              },
-              "humidity": {
-                "type": "object",
-                "title": "humidity sensor",
-                "required": [
-                  "name"
-                ],
-                "properties": {
-                  "name": {
-                    "type": "string",
-                    "default": "dht_humidity",
-                    "title": "humidity sensor name"
-                  }
-                }
-              },
-              "pin": {
-                "type": "string",
-                "default": "GPIO2",
-                "title": "pin"
-              }
-            }
+            "$ref": "#/definitions/sensor/dht"
           },
           {
-            "type": "object",
-            "title": "dallas schema",
-            "required": [
-              "platform",
-              "name",
-              "address"
-            ],
-            "properties": {
-              "platform": {
-                "const": "dallas",
-                "default": "dallas"
-              },
-              "name": {
-                "type": "string",
-                "default": "dallas_temp",
-                "title": "name"
-              },
-              "address": {
-                "type": "string",
-                "default": "0xdd3c01d075cdf928",
-                "title": "address"
-              }
-            }
+            "$ref": "#/definitions/sensor/dallas"
           },
           {
-            "type": "object",
-            "title": "scd4x schema",
-            "required": [
-              "platform",
-              "co2",
-              "temperature",
-              "humidity"
-            ],
-            "properties": {
-              "platform": {
-                "const": "scd4x",
-                "default": "scd4x"
-              },
-              "co2": {
-                "type": "object",
-                "default": {},
-                "title": "CO₂ sensor",
-                "required": [
-                  "name"
-                ],
-                "properties": {
-                  "name": {
-                    "type": "string",
-                    "default": "scd4x_co2",
-                    "title": "CO₂ sensor name"
-                  }
-                }
-              },
-              "temperature": {
-                "type": "object",
-                "default": {},
-                "title": "temperature sensor",
-                "required": [
-                  "name"
-                ],
-                "properties": {
-                  "name": {
-                    "type": "string",
-                    "default": "scd4x_temp",
-                    "title": "temperature sensor name"
-                  }
-                }
-              },
-              "humidity": {
-                "type": "object",
-                "default": {},
-                "title": "humidity sensor",
-                "required": [
-                  "name"
-                ],
-                "properties": {
-                  "name": {
-                    "type": "string",
-                    "default": "scd4x_hum",
-                    "title": "humidity sensor name"
-                  }
-                }
-              }
-            }
+            "$ref": "#/definitions/sensor/scd4x"
           },
           {
-            "type": "object",
-            "title": "pulse counter schema",
-            "required": [
-              "platform",
-              "pin",
-              "name"
-            ],
-            "properties": {
-              "platform": {
-                "const": "pulse counter",
-                "default": "pulse counter"
-              },
-              "pin": {
-                "type": "string",
-                "default": "12",
-                "title": "pin"
-              },
-              "name": {
-                "type": "string",
-                "default": "pulse_counter_temp",
-                "title": "name"
-              }
-            }
+            "$ref": "#/definitions/sensor/pulse"
           },
           {
-            "type": "object",
-            "title": "mhz19 schema",
-            "required": [
-              "platform",
-              "co2",
-              "temperature"
-            ],
-            "properties": {
-              "platform": {
-                "const": "mhz19",
-                "default": "mhz19"
-              },
-              "co2": {
-                "type": "object",
-                "default": {},
-                "title": "co_2 sensor",
-                "required": [
-                  "name"
-                ],
-                "properties": {
-                  "name": {
-                    "type": "string",
-                    "default": "mhz19_co2",
-                    "title": "co_2 sensor name"
-                  }
-                }
-              },
-              "temperature": {
-                "type": "object",
-                "default": {},
-                "title": "temperature sensor",
-                "required": [
-                  "name"
-                ],
-                "properties": {
-                  "name": {
-                    "type": "string",
-                    "default": "mhz19_temp",
-                    "title": "temperature sensor name"
-                  }
-                }
-              }
-            }
+            "$ref": "#/definitions/sensor/mhz19"
           },
           {
-            "type": "object",
-            "title": "modbus_controller schema",
-            "required": [
-              "platform",
-              "modbus_controller_id",
-              "name",
-              "id",
-              "register_type",
-              "address",
-              "unit_of_measurement",
-              "value_type"
-            ],
-            "properties": {
-              "platform": {
-                "const": "modbus_controller",
-                "default": "modbus_controller"
-              },
-              "modbus_controller_id": {
-                "type": "string",
-                "default": "epever",
-                "title": "modbus_controller_id"
-              },
-              "name": {
-                "type": "string",
-                "title": "name"
-              },
-              "id": {
-                "type": "string",
-                "title": "id"
-              },
-              "register_type": {
-                "type": "string",
-                "title": "register_type"
-              },
-              "address": {
-                "type": "string",
-                "default": "0x9001",
-                "title": "address"
-              },
-              "unit_of_measurement": {
-                "type": "string",
-                "title": "unit_of_measurement"
-              },
-              "value_type": {
-                "type": "string",
-                "title": "value_type"
-              }
-            }
+            "$ref": "#/definitions/sensor/modbus_controller"
+          },
+          {
+            "$ref": "#/definitions/sensor/adc"
           }
         ]
       }
@@ -661,42 +311,369 @@
         }
       }
     },
-    "adc": {
+    "uart": {
       "type": "object",
-      "title": "The adc Schema",
+      "default": "",
+      "title": "The uart Schema",
       "required": [
-        "pin",
-        "name",
-        "attenuation",
-        "raw",
-        "update_interval"
+        "rx_pin",
+        "tx_pin",
+        "baud_rate"
       ],
       "properties": {
-        "pin": {
+        "rx_pin": {
           "type": "string",
-          "default": "A0",
-          "title": "adc pin"
+          "title": "The rx_pin Schema"
         },
-        "name": {
+        "tx_pin": {
           "type": "string",
-          "default": "",
-          "title": "name of the adc"
+          "title": "The tx_pin Schema"
         },
-        "attenuation": {
+        "baud_rate": {
           "type": "integer",
-          "default": 0,
-          "title": "attenuation adc"
-        },
-        "update_interval": {
-          "type": "string",
-          "default": "60s",
-          "title": "update_interval"
-        },
-        "raw": {
-          "type": "boolean",
-          "default": false,
-          "title": "raw adc"
+          "title": "The baud_rate Schema"
         }
+      }
+    },
+    "id": {
+      "properties": {
+        "id": {
+          "type": "string",
+          "title": "The id Schema"
+        }
+      }
+    },
+    "stop_bits": {
+      "properties": {
+        "stop_bits": {
+          "type": "integer",
+          "title": "The stop_bits Schema"
+        }
+      }
+    },
+    "sensor": {
+      "adc": {
+        "type": "object",
+        "title": "The adc Schema",
+        "required": [
+          "platform",
+          "pin",
+          "name",
+          "attenuation",
+          "raw",
+          "update_interval"
+        ],
+        "properties": {
+          "platform": {
+            "const": "adc",
+            "default": "adc"
+          },
+          "pin": {
+            "$ref": "#/definitions/properties/pin"
+          },
+          "name": {
+            "type": "string",
+            "default": "",
+            "title": "name of the adc"
+          },
+          "attenuation": {
+            "type": "integer",
+            "default": 0,
+            "title": "attenuation adc"
+          },
+          "update_interval": {
+            "type": "string",
+            "default": "60s",
+            "title": "update_interval"
+          },
+          "raw": {
+            "type": "boolean",
+            "default": false,
+            "title": "raw adc"
+          }
+        }
+      },
+      "bme": {
+        "type": "object",
+        "title": "bme schema",
+        "required": [
+          "platform",
+          "temperature",
+          "pressure",
+          "humidity",
+          "address",
+          "update_interval"
+        ],
+        "properties": {
+          "platform": {
+            "const": "bme280",
+            "default": "bme280"
+          },
+          "pressure": {
+            "type": "object",
+            "default": {},
+            "title": "pressure sensor",
+            "required": [
+              "name"
+            ],
+            "properties": {
+              "name": {
+                "type": "string",
+                "default": "bme_pressure",
+                "title": "pressure sensor name"
+              }
+            }
+          },
+          "temperature": {
+            "$ref": "#/definitions/properties/temperature"
+          },
+          "humidity": {
+            "$ref": "#/definitions/properties/humidity"
+          },
+          "address": {
+            "$ref": "#/definitions/properties/address"
+          },
+          "update_interval": {
+            "$ref": "#/definitions/properties/update_interval"
+          }
+        }
+      },
+      "dht": {
+        "type": "object",
+        "title": "dht schema",
+        "required": [
+          "platform",
+          "temperature",
+          "humidity",
+          "pin"
+        ],
+        "properties": {
+          "platform": {
+            "const": "dht",
+            "default": "dht"
+          },
+          "temperature": {
+            "$ref": "#/definitions/properties/temperature"
+          },
+          "humidity": {
+            "$ref": "#/definitions/properties/humidity"
+          },
+          "pin": {
+            "$ref": "#/definitions/properties/pin"
+          }
+        }
+      },
+      "dallas": {
+        "type": "object",
+        "title": "dallas schema",
+        "required": [
+          "platform",
+          "name",
+          "address"
+        ],
+        "properties": {
+          "platform": {
+            "const": "dallas",
+            "default": "dallas"
+          },
+          "name": {
+            "type": "string",
+            "default": "dallas_temp",
+            "title": "name"
+          },
+          "address": {
+            "$ref": "#/definitions/properties/address"
+          }
+        }
+      },
+      "scd4x": {
+        "type": "object",
+        "title": "scd4x schema",
+        "required": [
+          "platform",
+          "co2",
+          "temperature",
+          "humidity"
+        ],
+        "properties": {
+          "platform": {
+            "const": "scd4x",
+            "default": "scd4x"
+          },
+          "co2": {
+            "$ref": "#/definitions/properties/co2"
+          },
+          "temperature": {
+            "$ref": "#/definitions/properties/temperature"
+          },
+          "humidity": {
+            "$ref": "#/definitions/properties/humidity"
+          }
+        }
+      },
+      "pulse": {
+        "type": "object",
+        "title": "pulse counter schema",
+        "required": [
+          "platform",
+          "pin",
+          "name"
+        ],
+        "properties": {
+          "platform": {
+            "const": "pulse counter",
+            "default": "pulse counter"
+          },
+          "pin": {
+            "$ref": "#/definitions/properties/pin"
+          },
+          "name": {
+            "type": "string",
+            "default": "pulse_counter",
+            "title": "pulse counter name"
+          }
+        }
+      },
+      "mhz19": {
+        "type": "object",
+        "title": "mhz19 schema",
+        "required": [
+          "platform",
+          "co2",
+          "temperature"
+        ],
+        "properties": {
+          "platform": {
+            "const": "mhz19",
+            "default": "mhz19"
+          },
+          "co2": {
+            "$ref": "#/definitions/properties/co2"
+          },
+          "temperature": {
+            "$ref": "#/definitions/properties/temperature"
+          }
+        }
+      },
+      "modbus_controller": {
+        "type": "object",
+        "title": "modbus_controller schema",
+        "required": [
+          "platform",
+          "modbus_controller_id",
+          "name",
+          "id",
+          "register_type",
+          "address",
+          "unit_of_measurement",
+          "value_type"
+        ],
+        "properties": {
+          "platform": {
+            "const": "modbus_controller",
+            "default": "modbus_controller"
+          },
+          "modbus_controller_id": {
+            "type": "string",
+            "default": "epever",
+            "title": "modbus_controller_id"
+          },
+          "name": {
+            "type": "string",
+            "title": "name"
+          },
+          "id": {
+            "type": "string",
+            "title": "id"
+          },
+          "register_type": {
+            "type": "string",
+            "title": "register_type"
+          },
+          "address": {
+            "$ref": "#/definitions/properties/address"
+          },
+          "unit_of_measurement": {
+            "type": "string",
+            "title": "unit_of_measurement"
+          },
+          "value_type": {
+            "type": "string",
+            "title": "value_type"
+          }
+        }
+      }
+    },
+    "properties": {
+      "temperature": {
+        "type": "object",
+        "default": {},
+        "title": "temperature sensor",
+        "required": [
+          "name"
+        ],
+        "properties": {
+          "name": {
+            "type": "string",
+            "default": "",
+            "title": "temperature sensor name"
+          },
+          "oversampling": {
+            "type": "string",
+            "default": "16x",
+            "title": "oversampling"
+          }
+        }
+      },
+      "humidity": {
+        "type": "object",
+        "default": {},
+        "title": "humidity sensor",
+        "required": [
+          "name"
+        ],
+        "properties": {
+          "name": {
+            "type": "string",
+            "default": "",
+            "title": "humidity sensor name"
+          }
+        }
+      },
+      "address": {
+        "type": "string",
+        "default": "",
+        "title": "address"
+      },
+      "update_interval": {
+        "type": "string",
+        "default": "60s",
+        "title": "update_interval"
+      },
+      "pin": {
+        "type": "integer",
+        "default": "",
+        "title": "pin"
+      },
+      "co2": {
+        "type": "object",
+        "default": {},
+        "title": "CO₂ sensor",
+        "required": [
+          "name"
+        ],
+        "properties": {
+          "name": {
+            "type": "string",
+            "default": "",
+            "title": "CO₂ sensor name"
+          }
+        }
+      },
+      "password": {
+        "type": "string",
+        "default": "",
+        "title": "The password Schema"
       }
     }
   }
