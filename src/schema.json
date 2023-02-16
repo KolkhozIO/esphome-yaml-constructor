@@ -204,10 +204,12 @@
       "properties": {
         "id": {
           "type": "string",
+          "default": "modbus1",
           "title": "The id Schema"
         },
         "flow_control_pin": {
           "type": "integer",
+          "default": "5",
           "title": "The flow_control_pin Schema"
         }
       }
@@ -237,10 +239,12 @@
               },
               "modbus_id": {
                 "type": "string",
+                "default": "modbus1",
                 "title": "modbus_id"
               },
               "setup_priority": {
                 "type": "integer",
+                "default": "-10",
                 "title": "setup_priority"
               }
             }
@@ -320,14 +324,17 @@
       "properties": {
         "rx_pin": {
           "type": "string",
+          "default": "16",
           "title": "The rx_pin Schema"
         },
         "tx_pin": {
           "type": "string",
+          "default": "17",
           "title": "The tx_pin Schema"
         },
         "baud_rate": {
           "type": "integer",
+          "default": 115200,
           "title": "The baud_rate Schema"
         }
       }
@@ -336,6 +343,7 @@
       "properties": {
         "id": {
           "type": "string",
+          "default": "mod_bus",
           "title": "The id Schema"
         }
       }
@@ -344,6 +352,7 @@
       "properties": {
         "stop_bits": {
           "type": "integer",
+          "default": 1,
           "title": "The stop_bits Schema"
         }
       }
@@ -367,17 +376,17 @@
           },
           "pin": {
             "type": "string",
-            "default": "",
+            "default": "A0",
             "title": "pin"
           },
           "name": {
             "type": "string",
-            "default": "",
+            "default": "Living Room Brightness",
             "title": "name of the adc"
           },
           "attenuation": {
             "type": "string",
-            "default": "auto",
+            "default": "6db",
             "title": "attenuation adc"
           },
           "update_interval": {
@@ -418,7 +427,7 @@
             "properties": {
               "name": {
                 "type": "string",
-                "default": "bme_pressure",
+                "default": "BME280 Pressure",
                 "title": "pressure sensor name"
               }
             }
@@ -458,7 +467,8 @@
             "$ref": "#/definitions/properties/humidity"
           },
           "pin": {
-            "$ref": "#/definitions/properties/pin"
+            "$ref": "#/definitions/properties/pin",
+            "default": "D2"
           }
         }
       },
@@ -477,7 +487,7 @@
           },
           "name": {
             "type": "string",
-            "default": "dallas_temp",
+            "default": "Livingroom Temperature",
             "title": "name"
           },
           "address": {
@@ -520,15 +530,16 @@
         ],
         "properties": {
           "platform": {
-            "const": "pulse",
-            "default": "pulse"
+            "const": "pulse_counter",
+            "default": "pulse_counter"
           },
           "pin": {
-            "$ref": "#/definitions/properties/pin"
+            "$ref": "#/definitions/properties/pin",
+            "default": 12
           },
           "name": {
             "type": "string",
-            "default": "pulse_counter",
+            "default": "Pulse Counter",
             "title": "pulse counter name"
           }
         }
@@ -579,14 +590,17 @@
           },
           "name": {
             "type": "string",
+            "default": "Battery Capacity",
             "title": "name"
           },
           "id": {
             "type": "string",
+            "default": "battery_capacity",
             "title": "id"
           },
           "register_type": {
             "type": "string",
+            "default": "holding",
             "title": "register_type"
           },
           "address": {
@@ -594,10 +608,12 @@
           },
           "unit_of_measurement": {
             "type": "string",
+            "default": "AH",
             "title": "unit_of_measurement"
           },
           "value_type": {
             "type": "string",
+            "default": "U_WORD",
             "title": "value_type"
           }
         }
