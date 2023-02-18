@@ -1,8 +1,7 @@
 import os
-import uuid
 
-import db_models
-from settings import UPLOADED_FILES_PATH
+from db import db_models
+from repositories.settings import UPLOADED_FILES_PATH
 
 
 async def save_file_to_uploads(file, filename):

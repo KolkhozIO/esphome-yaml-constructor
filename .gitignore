@@ -5,6 +5,7 @@
 # You can modify this file to suit your needs.
 /uploaded_files/.esphome
 /uploaded_files/secrets.yaml
+__pycache__
 
 # compiled output
 /dist

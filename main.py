@@ -2,17 +2,16 @@ import os
 import shutil
 import subprocess
 import uuid
-from fileinput import filename
 
 import yaml
-from fastapi import FastAPI, Response, status, File, UploadFile, Depends
+from fastapi import FastAPI, status, File, UploadFile, Depends
 from sqlalchemy.orm import Session
 from starlette.responses import FileResponse
 
-import db_models
-from db_connect import SessionLocal, engine
-from methods import format_filename, save_file_to_uploads, add_file_to_db, get_file_from_db
-from settings import UPLOADED_FILES_PATH, COMPILE_DIR
+from db import db_models
+from db.db_connect import SessionLocal, engine
+from repositories.methods import format_filename, save_file_to_uploads, add_file_to_db, get_file_from_db
+from repositories.settings import UPLOADED_FILES_PATH, COMPILE_DIR
 
 db_models.Base.metadata.create_all(engine)
 
@@ -67,23 +66,6 @@ async def upload_file(
     file_info_from_db = get_file_from_db(db, id)
     file_name = file_info_from_db.name_yaml
     cmd = f"esphome compile {UPLOADED_FILES_PATH}{file_name}.yaml"
-
-    # returned_output = subprocess.check_output(cmd)
-    # logs = returned_output.decode("utf-8")
-
-    # try:
-    #     logs = subprocess.check_output(
-    #         cmd,
-    #         stderr=subprocess.STDOUT,
-    #     ).decode("utf-8")
-    #
-    # except subprocess.CalledProcessError as e:
-    #     logs = str(e)
-
-    # logs = subprocess.check_output(
-    #     cmd,
-    #     stderr=subprocess.STDOUT,
-    #     shell=True).output()
 
     logs = subprocess.Popen(cmd,
                             stdout=subprocess.PIPE,
