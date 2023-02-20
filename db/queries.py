@@ -1,8 +1,8 @@
-from db import db_models
+from db import models
 
 
 def add_file_to_db(db, **kwargs):
-    new_file = db_models.Filename(name_yaml=kwargs['file_name'], name_esphome=kwargs['name_esphome'],
+    new_file = models.Filename(name_yaml=kwargs['file_name'], name_esphome=kwargs['name_esphome'],
                                   hash_yaml=kwargs['hash_yaml'])
     db.add(new_file)
     db.commit()
@@ -11,12 +11,12 @@ def add_file_to_db(db, **kwargs):
 
 
 def get_file_from_db(db, id):
-    return db.query(db_models.Filename).filter(db_models.Filename.id == id).first()
+    return db.query(models.Filename).filter(models.Filename.id == id).first()
 
 
 def get_hash_from_db(db, hash_yaml):
-    return db.query(db_models.Filename).filter(db_models.Filename.hash_yaml == hash_yaml,
-                                               db_models.Filename.compile_test == True).first()
+    return db.query(models.Filename).filter(models.Filename.hash_yaml == hash_yaml,
+                                               models.Filename.compile_test == True).first()
 
 
 def update_compile_test_in_db(db, id):

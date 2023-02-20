@@ -1,8 +1,7 @@
 import hashlib
 import os
 
-from db import db_models
-from lib.queries_db import get_file_from_db
+from db.queries import get_file_from_db
 from settings import UPLOADED_FILES_PATH
 
 

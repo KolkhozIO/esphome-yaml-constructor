@@ -8,14 +8,14 @@ from fastapi import FastAPI, status, File, UploadFile, Depends
 from sqlalchemy.orm import Session
 from starlette.responses import FileResponse
 
-from db import db_models
-from db.db_connect import SessionLocal, engine
+from db import models
+from db.connect import SessionLocal, engine
 from lib.methods import format_filename, save_file_to_uploads, get_hash_md5, command_compil
-from lib.queries_db import add_file_to_db, get_file_from_db, get_hash_from_db, update_compile_test_in_db, \
+from db.queries import add_file_to_db, get_file_from_db, get_hash_from_db, update_compile_test_in_db, \
     delete_file_from_db
 from settings import UPLOADED_FILES_PATH, COMPILE_DIR
 
-db_models.Base.metadata.create_all(engine)
+models.Base.metadata.create_all(engine)
 
 
 def get_db():
