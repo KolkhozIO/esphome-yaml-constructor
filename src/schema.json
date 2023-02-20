@@ -5,23 +5,6 @@
     "esphome",
     "esp32"
   ],
-  "dallas": {
-    "items": {
-      "type": "object",
-      "default": {},
-      "title": "A Schema",
-      "required": [
-        "pin"
-      ],
-      "properties": {
-        "pin": {
-          "$ref": "#/definitions/properties/pin"
-        }
-      }
-    },
-    "title": "The dallas Schema",
-    "type": "array"
-  },
   "properties": {
     "esphome": {
       "type": "object",
@@ -69,6 +52,29 @@
             }
           }
         }
+      }
+    },
+    "dallas": {
+      "type": "array",
+      "title": "dallas",
+      "items": {
+        "anyOf": [
+          {
+            "type": "object",
+            "default": {},
+            "title": "dallas schema",
+            "required": [
+              "pin"
+            ],
+            "properties": {
+              "pin": {
+                "type": "string",
+                "default": "GPIO23",
+                "title": "pin"
+              }
+            }
+          }
+        ]
       }
     },
     "logger": {
@@ -154,7 +160,7 @@
                 "$ref": "#/definitions/i2c"
               },
               {
-                "$ref": "#/definitions/bus_id"
+                "$ref": "#/definitions/id"
               }
             ]
           },
@@ -302,15 +308,6 @@
         }
       }
     },
-    "bus_id": {
-      "properties": {
-        "bus_id": {
-          "type": "string",
-          "default": "bus_a",
-          "title": "i2c bus name"
-        }
-      }
-    },
     "uart": {
       "type": "object",
       "default": "",
@@ -369,7 +366,9 @@
             "default": "adc"
           },
           "pin": {
-            "$ref": "#/definitions/properties/pin"
+            "type": "string",
+            "default": "",
+            "title": "pin"
           },
           "name": {
             "type": "string",
@@ -377,8 +376,8 @@
             "title": "name of the adc"
           },
           "attenuation": {
-            "type": "integer",
-            "default": 0,
+            "type": "string",
+            "default": "auto",
             "title": "attenuation adc"
           },
           "update_interval": {
@@ -521,8 +520,8 @@
         ],
         "properties": {
           "platform": {
-            "const": "pulse counter",
-            "default": "pulse counter"
+            "const": "pulse",
+            "default": "pulse"
           },
           "pin": {
             "$ref": "#/definitions/properties/pin"
