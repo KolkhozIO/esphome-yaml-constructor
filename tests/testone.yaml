@@ -1,0 +1,80 @@
+esphome:
+  name: badtest
+esp32:
+  board: esp32doit-devkit-v1
+  framework:
+    type: arduino
+api:
+  password: password
+ota:
+  password: password
+dallas:
+  - pin: GPIO23
+wifi:
+  password: password
+  ap:
+    password: password
+    ssid: test
+  ssid: test
+modbus_controller:
+  - id: epever
+    address: "0x70"
+    modbus_id: q12
+    setup_priority: 12
+i2c:
+  - sda: 21
+    scl: 22
+    scan: true
+    id: bus_a
+uart:
+  - id: q23
+    rx_pin: "22"
+    tx_pin: "21"
+    baud_rate: 12
+    stop_bits: 1
+modbus:
+  id: q12
+  flow_control_pin: 22
+sensor:
+  - platform: bme280
+    pressure:
+      name: test
+    temperature:
+      name: test
+      oversampling: 16x
+    humidity:
+      name: test
+    address: "0x70"
+    update_interval: 60s
+  - platform: dht
+    temperature:
+      name: temperature
+    humidity:
+      name: humidity
+    pin: 12
+  - platform: dallas
+    name: dallas_temp
+    address: "0x70"
+  - platform: scd4x
+    co2:
+      name: co2
+    temperature:
+      name: temperature
+    humidity:
+      name: humidity
+  - platform: pulse_counter
+    pin: 12
+    name: pulse_counter
+  - platform: mhz19
+    co2:
+      name: co2
+    temperature:
+      name: temperature
+  - platform: modbus_controller
+    modbus_controller_id: epever
+    name: test
+    id: battery_rated_current
+    register_type: read
+    address: "0x70"
+    unit_of_measurement: "V "
+    value_type: U_WORD
