@@ -7,6 +7,10 @@ import yaml
 from fastapi import FastAPI, status, File, UploadFile, Depends
 from sqlalchemy.orm import Session
 from starlette.responses import FileResponse
+import uvicorn
+from fastapi import Request, FastAPI
+
+from pydantic import BaseModel
 
 from db import models
 from db.connect import SessionLocal, engine
@@ -28,11 +32,11 @@ def get_db():
 
 app = FastAPI()
 
-
 @app.post("/upload", tags=["Upload"], status_code=status.HTTP_200_OK)
-async def upload_file(file: UploadFile = File(...),
-                      db: Session = Depends(get_db)):
+async def upload_file(request: Request, db: Session = Depends(get_db)):
     #переименовую и сохраняю в папку
+    req = await request.json()
+    print(req)
     file_name = str(uuid.uuid4())
     full_name = format_filename(file, file_name)
     await save_file_to_uploads(file, full_name)
@@ -95,3 +99,7 @@ async def upload_file(
     stdout, stderr = logs.communicate()
 
     return stdout
+
+
+if __name__ == "__main__":
+    uvicorn.run(app, host="0.0.0.0", port=8000)
