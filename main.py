@@ -11,10 +11,11 @@ import uvicorn
 from fastapi import Request, FastAPI
 
 from pydantic import BaseModel
+from yaml import SafeLoader
 
 from db import models
 from db.connect import SessionLocal, engine
-from lib.methods import format_filename, save_file_to_uploads, get_hash_md5, command_compil
+from lib.methods import save_file_to_uploads, get_hash_md5, command_compil
 from db.queries import add_file_to_db, get_file_from_db, get_hash_from_db, update_compile_test_in_db, \
     delete_file_from_db
 from settings import UPLOADED_FILES_PATH, COMPILE_DIR
@@ -32,21 +33,18 @@ def get_db():
 
 app = FastAPI()
 
+
 @app.post("/upload", tags=["Upload"], status_code=status.HTTP_200_OK)
 async def upload_file(request: Request, db: Session = Depends(get_db)):
-    #переименовую и сохраняю в папку
-    req = await request.json()
-    print(req)
-    file_name = str(uuid.uuid4())
-    full_name = format_filename(file, file_name)
-    await save_file_to_uploads(file, full_name)
+    # переименовую и сохраняю в папку
+    file_name = await save_file_to_uploads(request)
 
-    #читаю файл и достаю esphome name
-    read_yaml = yaml.safe_load(open(f"{UPLOADED_FILES_PATH}{full_name}"))
+    # читаю файл и достаю esphome name
+    read_yaml = yaml.safe_load(open(f"{UPLOADED_FILES_PATH}{file_name}.yaml"))
     name_esphome = read_yaml['esphome']['name']
 
-    #генерирую хеш и все добавляю в базу данных
-    hash_yaml = get_hash_md5(full_name)
+    # генерирую хеш и все добавляю в базу данных
+    hash_yaml = get_hash_md5(file_name)
     data = add_file_to_db(db, file_name=file_name, name_esphome=name_esphome, hash_yaml=hash_yaml, compile_test=False)
     return data.id
 
@@ -56,7 +54,7 @@ async def upload_file(
         id: int,
         db: Session = Depends(get_db)
 ):
-    #получаю информацию из бд по id ищу скомпилированных хэш если был, компилирую или вывожу файл
+    # получаю информацию из бд по id ищу скомпилированных хэш если был, компилирую или вывожу файл
     file_info_from_db = get_file_from_db(db, id)
     file_name = file_info_from_db.name_yaml
     name_esphome = file_info_from_db.name_esphome

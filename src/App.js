@@ -10,13 +10,13 @@ import Typography from '@mui/material/Typography';
 const App = () => {
   const [formData, setFormData] = React.useState(null);
   function handleClick() {
-    var yaml_text = YAML.stringify(formData)
+    var yaml_text = JSON.stringify(formData)
     // Send data to the backend via POST
     fetch('http://localhost:8000/upload', {
       method: 'POST',
       mode: 'no-cors',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({yaml_text: yaml_text}) // body data type must match "Content-Type" header
+      body: yaml_text // body data type must match "Content-Type" header
     })
 
   }

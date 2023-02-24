@@ -1,22 +1,20 @@
 import hashlib
 import os
+import uuid
+
+import yaml
 
 from db.queries import get_file_from_db
 from settings import UPLOADED_FILES_PATH
 
 
-async def save_file_to_uploads(file, filename):
-    with open(f'{UPLOADED_FILES_PATH}{filename}', "wb") as uploaded_file:
-        file_content = await file.read()
-        uploaded_file.write(file_content)
-        uploaded_file.close()
-
-
-def format_filename(file, file_name):
-    # Split filename and extention
-    filename, ext = os.path.splitext(file.filename)
-    filename = str(file_name)
-    return filename + ext
+async def save_file_to_uploads(request):
+    req = await request.json()
+    file_name = str(uuid.uuid4())
+    yaml_text = yaml.dump(req)
+    with open(f"{UPLOADED_FILES_PATH}{file_name}.yaml", "w") as file:
+        file.write(yaml_text)
+    return file_name
 
 
 def command_compil(db, id):
@@ -26,8 +24,8 @@ def command_compil(db, id):
     return cmd
 
 
-def get_hash_md5(full_name):
-    with open(f"{UPLOADED_FILES_PATH}{full_name}", 'rb') as f:
+def get_hash_md5(file_name):
+    with open(f"{UPLOADED_FILES_PATH}{file_name}.yaml", 'rb') as f:
         m = hashlib.md5()
         while True:
             data = f.read(8192)
