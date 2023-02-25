@@ -10,8 +10,8 @@ def add_file_to_db(db, **kwargs):
     return new_file
 
 
-def get_file_from_db(db, id):
-    return db.query(models.Filename).filter(models.Filename.id == id).first()
+def get_file_from_db(db, file_name):
+    return db.query(models.Filename).filter(models.Filename.name_yaml == file_name).first()
 
 
 def get_hash_from_db(db, hash_yaml):
@@ -19,8 +19,8 @@ def get_hash_from_db(db, hash_yaml):
                                                models.Filename.compile_test == True).first()
 
 
-def update_compile_test_in_db(db, id):
-    update_file = get_file_from_db(db, id)
+def update_compile_test_in_db(db, file_name):
+    update_file = get_file_from_db(db, file_name)
     update_file.compile_test = True
 
     db.commit()
