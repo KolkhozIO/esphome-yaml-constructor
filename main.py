@@ -15,6 +15,7 @@ from yaml import SafeLoader
 
 from db import models
 from db.connect import SessionLocal, engine
+from lib.logs import execute, get_hash_from_db_logs
 from lib.methods import save_file_to_uploads, get_hash_md5, command_compil, compile_yaml_file
 from db.queries import add_file_to_db, get_file_from_db, get_hash_from_db, update_compile_test_in_db, \
     delete_file_from_db
@@ -51,12 +52,13 @@ async def upload_file(request: Request, background_tasks: BackgroundTasks = Back
     file_info_from_db = add_file_to_db(db, file_name=file_name, name_esphome=name_esphome, hash_yaml=hash_yaml, compile_test=False)
     background_tasks.add_task(compile_yaml_file, db, hash_yaml, name_esphome, file_name)
     # await compile_yaml_file(db, hash_yaml, name_esphome, file_name)
-    return file_info_from_db.name_yaml
+    print(file_info_from_db.hash_yaml)
+    return file_info_from_db.hash_yaml
 
 
 @app.post("/compile", tags=["Compile"], status_code=status.HTTP_200_OK)
 async def compile_file(
-        hash_yaml: int,
+        hash_yaml: str,
         db: Session = Depends(get_db)
 ):
     # получаю информацию из бд по id ищу скомпилированных хэш если был, компилирую или вывожу файл
@@ -68,32 +70,24 @@ async def compile_file(
                         media_type="application/octet-stream")
 
 
-# @app.post("/logs", tags=["Logs"], status_code=status.HTTP_200_OK)
-# async def logs_compile_file(
-#         id: int,
-#         db: Session = Depends(get_db)
-# ):
-#     cmd = command_compil(db, id)
-#
-#     # logs = subprocess.Popen(cmd,
-#     #                         stdout=subprocess.PIPE,
-#     #                         stderr=subprocess.STDOUT)
-#     # stdout, stderr = logs.communicate()
-#
-#     process = await asyncio.create_subprocess_shell(
-#         cmd,
-#         stderr=asyncio.subprocess.PIPE)
-#     ans = str(process.pid)
-#
-#     # Status
-#     print('Started:', cmd, '(pid = ' + str(process.pid) + ')')
-#
-#     # Wait for the subprocess to finish
-#     stdout, stderr = await process.communicate()
-#
-#     result = stderr.decode().strip()
-#
-#     return result
+@app.post("/logs", tags=["Logs"], status_code=status.HTTP_200_OK)
+async def logs_compile_file(
+        hash_yaml: str,
+        db: Session = Depends(get_db)
+):
+    file_info_from_db = get_hash_from_db_logs(db, hash_yaml)
+    file_name = file_info_from_db.name_yaml
+    cmd = command_compil(file_name)
+
+    # logs = subprocess.Popen(cmd,
+    #                         stdout=subprocess.PIPE,
+    #                         stderr=subprocess.STDOUT)
+    # stdout, stderr = logs.communicate()
+    #
+    # result = stderr.decode().strip()
+    print(execute(cmd))
+
+    return file_name
 
 
 if __name__ == "__main__":
