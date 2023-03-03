@@ -10,3 +10,12 @@ class Filename(Base):
     name_esphome = Column(String)
     hash_yaml = Column(String)
     compile_test = Column(Boolean, default=False)
+
+
+class Yamlfile(Base):
+    __tablename__ = 'yamlfile'
+
+    id = Column(Integer, primary_key=True, index=True)
+    uuid = Column(String)
+    yaml_text = Column(String)
+

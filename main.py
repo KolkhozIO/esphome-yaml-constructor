@@ -6,8 +6,9 @@ import uuid
 
 import yaml
 from fastapi import FastAPI, BackgroundTasks, status, File, UploadFile, Depends, Request
+from fastapi.encoders import jsonable_encoder
 from sqlalchemy.orm import Session
-from starlette.responses import FileResponse
+from starlette.responses import FileResponse, JSONResponse
 import uvicorn
 
 from pydantic import BaseModel
@@ -15,10 +16,11 @@ from yaml import SafeLoader
 
 from db import models
 from db.connect import SessionLocal, engine
-from lib.logs import execute, get_hash_from_db_logs
+from lib.logs_two import execute
+# from lib.logs import execute, get_hash_from_db_logs
 from lib.methods import save_file_to_uploads, get_hash_md5, command_compil, compile_yaml_file
 from db.queries import add_file_to_db, get_file_from_db, get_hash_from_db, update_compile_test_in_db, \
-    delete_file_from_db
+    delete_file_from_db, add_yaml_to_db, get_yaml_from_db
 from settings import UPLOADED_FILES_PATH, COMPILE_DIR
 
 models.Base.metadata.create_all(engine)
@@ -33,6 +35,32 @@ def get_db():
 
 
 app = FastAPI()
+
+
+@app.post("/share", tags=["Share"], status_code=status.HTTP_201_CREATED)
+async def create_share_file(request: Request, db: Session = Depends(get_db)):
+    req = await request.json()
+    file_name = str(uuid.uuid4())
+    yaml_text = yaml.dump(req)
+    add_yaml_to_db(db, file_name, yaml_text)
+    url = f"config-generator.com/config/{file_name}"
+    return JSONResponse(
+        status_code=status.HTTP_201_CREATED,
+        content={
+            'uuid': file_name,
+            'url': url
+        }
+    )
+
+
+@app.get("/share/{uuid}", tags=["Share"], status_code=status.HTTP_200_OK)
+async def get_share_file(file_name: str, db: Session = Depends(get_db)):
+    info_file = get_yaml_from_db(db, file_name)
+    json_info_file = jsonable_encoder(info_file)
+    return JSONResponse(
+        status_code=status.HTTP_201_CREATED,
+        content=json_info_file['yaml_text']
+    )
 
 
 @app.post("/upload", tags=["Upload"], status_code=status.HTTP_200_OK)
@@ -75,9 +103,13 @@ async def logs_compile_file(
         hash_yaml: str,
         db: Session = Depends(get_db)
 ):
-    file_info_from_db = get_hash_from_db_logs(db, hash_yaml)
+    file_info_from_db = get_hash_from_db(db, hash_yaml)
     file_name = file_info_from_db.name_yaml
     cmd = command_compil(file_name)
+
+    # loop = asyncio.get_event_loop()
+    # rc = loop.run_until_complete(_stream_subprocess(cmd))
+    # loop.close()
 
     # logs = subprocess.Popen(cmd,
     #                         stdout=subprocess.PIPE,
@@ -85,9 +117,8 @@ async def logs_compile_file(
     # stdout, stderr = logs.communicate()
     #
     # result = stderr.decode().strip()
-    print(execute(cmd))
 
-    return file_name
+    # return execute(cmd)
 
 
 if __name__ == "__main__":
