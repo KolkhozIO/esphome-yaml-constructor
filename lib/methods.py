@@ -60,8 +60,17 @@ async def compile_yaml_file(db, hash_yaml, name_esphome, file_name):
         shutil.copy2(f"{UPLOADED_FILES_PATH}.esphome/build/{name_esphome}/.pioenvs/{name_esphome}/firmware.bin",
                      f"{COMPILE_DIR}{file_name}.bin")
 
-        os.remove(f'{UPLOADED_FILES_PATH}{file_name}.yaml')
+        # os.remove(f'{UPLOADED_FILES_PATH}{file_name}.yaml')
     else:
         file_info_from_db = get_file_from_db(db, file_name)
-        os.remove(f'{UPLOADED_FILES_PATH}{file_name}.yaml')
+        # os.remove(f'{UPLOADED_FILES_PATH}{file_name}.yaml')
         delete_file_from_db(db, file_info_from_db)
+
+
+async def _read_stream(stream):
+    while True:
+        line = stream.readline()
+        if line:
+            yield line
+        else:
+            break
