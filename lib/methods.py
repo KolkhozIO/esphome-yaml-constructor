@@ -4,6 +4,7 @@ import os
 import shutil
 import subprocess
 import uuid
+import re
 
 import yaml
 from starlette.responses import FileResponse
@@ -72,7 +73,9 @@ async def _read_stream(stream):
     while True:
         line = stream.readline()
         if line:
-            linen = f'{line}\n\n'
+            clean_line = re.sub(rb'\x1b\[([0-9]{1,2}(;[0-9]{1,2})?)?[m|K]', b'', line)
+            clean_line = clean_line.decode().replace('\r', '').replace('\n', '')
+            linen = f'{clean_line}\n\n'
             yield linen
         else:
             break

@@ -4,3 +4,4 @@ starlette==0.25.0
 uvicorn==0.20.0
 fastapi==0.93.0
 pydantic==1.10.6
+sse-starlette==1.2.1
