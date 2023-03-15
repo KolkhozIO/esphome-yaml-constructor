@@ -1,4 +1,5 @@
 import asyncio
+import os
 import subprocess
 import uuid
 
@@ -6,6 +7,7 @@ import yaml
 from fastapi import FastAPI, BackgroundTasks, status, Depends, Request
 from fastapi.encoders import jsonable_encoder
 from sqlalchemy.orm import Session
+from starlette.middleware.cors import CORSMiddleware
 from starlette.responses import FileResponse, JSONResponse
 from sse_starlette.sse import EventSourceResponse
 import uvicorn
@@ -32,6 +34,19 @@ def get_db():
 
 
 app = FastAPI()
+
+origins = [
+    "http://localhost:3000",
+    "localhost:3000"
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"]
+)
 
 
 @app.post("/share", tags=["Share"], status_code=status.HTTP_201_CREATED)
@@ -79,7 +94,10 @@ async def upload_file(request: Request, background_tasks: BackgroundTasks = Back
     background_tasks.add_task(compile_yaml_file, db, hash_yaml, name_esphome, file_name)
     # await compile_yaml_file(db, hash_yaml, name_esphome, file_name)
     print(file_info_from_db.hash_yaml)
-    return file_info_from_db.hash_yaml
+    return JSONResponse(
+        status_code=status.HTTP_200_OK,
+        content=hash_yaml
+    )
 
 
 @app.post("/compile", tags=["Compile"], status_code=status.HTTP_200_OK)
@@ -91,6 +109,7 @@ async def compile_file(
 
     file_info_from_db = get_hash_from_db(db, hash_yaml)
     file_name = file_info_from_db.name_yaml
+    os.remove(f'{UPLOADED_FILES_PATH}{file_name}.yaml')
     return FileResponse(f"compile_files/{file_name}.bin",
                         filename=f"{file_name}.bin",
                         media_type="application/octet-stream")
@@ -106,11 +125,15 @@ async def logs_compile_file(
     print(file_info_from_db.name_yaml)
     file_name = file_info_from_db.name_yaml
     cmd = command_compil(file_name)
-
+    print(cmd)
+    print(type(cmd))
     process = subprocess.Popen(cmd,
                                stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.STDOUT)
     otv = _read_stream(process.stdout)
     return EventSourceResponse(otv)
+
+    # otv = _read_stream(cmd)
+    # return EventSourceResponse(otv)
 
     # process = await asyncio.create_subprocess_shell(cmd,
     #                                                 stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.STDOUT)

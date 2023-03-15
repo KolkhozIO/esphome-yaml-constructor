@@ -1,3 +1,4 @@
+import asyncio
 import hashlib
 import os
 import shutil
@@ -71,6 +72,7 @@ async def _read_stream(stream):
     while True:
         line = stream.readline()
         if line:
-            yield line
+            linen = f'{line}\n\n'
+            yield linen
         else:
             break
