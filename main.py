@@ -12,9 +12,6 @@ from starlette.responses import FileResponse, JSONResponse
 from sse_starlette.sse import EventSourceResponse
 import uvicorn
 
-from pydantic import BaseModel
-from yaml import SafeLoader
-
 from db import models
 from db.connect import SessionLocal, engine
 from lib.methods import save_file_to_uploads, get_hash_md5, command_compil, compile_yaml_file, _read_stream
@@ -91,6 +88,7 @@ async def upload_file(request: Request, background_tasks: BackgroundTasks = Back
     hash_yaml = get_hash_md5(file_name)
     file_info_from_db = add_file_to_db(db, file_name=file_name, name_esphome=name_esphome, hash_yaml=hash_yaml,
                                        compile_test=False)
+    # компилирую yaml файл и сохраняю в папку compile_files в фоновом режиме
     background_tasks.add_task(compile_yaml_file, db, hash_yaml, name_esphome, file_name)
     # await compile_yaml_file(db, hash_yaml, name_esphome, file_name)
     print(file_info_from_db.hash_yaml)
@@ -105,7 +103,7 @@ async def compile_file(
         hash_yaml: str,
         db: Session = Depends(get_db)
 ):
-    # получаю информацию из бд по id ищу скомпилированных хэш если был, компилирую или вывожу файл
+    # получаю информацию о файле, удаляю yaml файл, возвращаю бинарник пользователю
 
     file_info_from_db = get_hash_from_db(db, hash_yaml)
     file_name = file_info_from_db.name_yaml
@@ -120,25 +118,21 @@ async def logs_compile_file(
         hash_yaml: str,
         db: Session = Depends(get_db)
 ):
+    # получаю информацию о файле из бд
     print(hash_yaml)
     file_info_from_db = get_hash_from_db(db, hash_yaml)
     print(file_info_from_db.name_yaml)
     file_name = file_info_from_db.name_yaml
+    # cmd - комманда выполнения компиляции
     cmd = command_compil(file_name)
     print(cmd)
     print(type(cmd))
+    # процесс компиляции
     process = subprocess.Popen(cmd,
                                stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.STDOUT)
+    # построчный вывод логов(генератор)
     otv = _read_stream(process.stdout)
     return EventSourceResponse(otv)
-
-    # otv = _read_stream(cmd)
-    # return EventSourceResponse(otv)
-
-    # process = await asyncio.create_subprocess_shell(cmd,
-    #                                                 stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.STDOUT)
-    #
-    # return StreamingResponse(await _read_stream(process.stdout))
 
 
 if __name__ == "__main__":

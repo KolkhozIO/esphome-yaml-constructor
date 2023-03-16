@@ -17,28 +17,10 @@ import { fetchEventSource } from '@microsoft/fetch-event-source';
 const App = () => {
   const [formData, setFormData] = React.useState(null);
   const [hashData, setHashData] = React.useState({});
+  const [seeData, setSseData] = React.useState([]);
   const serverBaseURL = "http://localhost:8000";
 
-  useEffect(() => {
-    const data = window.localStorage.getItem('MY_APP_STATE');
-    if ( data !== null ) setFormData(JSON.parse(data));
-  }, []);
-
-  useEffect(() => {
-    window.localStorage.setItem('MY_APP_STATE', JSON.stringify(formData));
-  }, [formData]);
-
-  function handleClick() {
-    var yaml_text = JSON.stringify(formData)
-    // Send data to the backend via POST
-    fetch(`${serverBaseURL}/upload`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: yaml_text // body data type must match "Content-Type" header
-    }).then(response => response.json())
-      .then(data => setHashData(data))
-  }
-
+  //  Функция Post запрос compile, которая скачивает файл
   const handleDownload = () => {
     fetch(`${serverBaseURL}/compile?hash_yaml=${hashData}`, {
       method: 'POST'
@@ -58,23 +40,7 @@ const App = () => {
       });
   }
 
-
-
-
-  function shareClick() {
-    var yaml_text = JSON.stringify(formData)
-    // Send data to the backend via POST
-    fetch(`${serverBaseURL}/share`, {
-      method: 'POST',
-      mode: 'no-cors',
-      headers: { 'Content-Type': 'application/json' },
-      body: yaml_text // body data type must match "Content-Type" header
-    }).then(response=>response.json())
-      .then(response=> console.log(response.json()))
-  }
-
-
-  const [seeData, setSseData] = React.useState([]);
+  //  Get запрос logs, на получение логов построчно
   const fetchData = async () => {
     setSseData([]);
     const res = await fetchEventSource(`${serverBaseURL}/logs?hash_yaml=${hashData}`,
@@ -93,6 +59,7 @@ const App = () => {
         },
         onmessage(event) {
           console.log(event.data);
+          //  запись каждой строки в seeData
           setSseData(prevData => prevData.concat(event.data));
         },
         onclose() {
@@ -108,7 +75,7 @@ const App = () => {
 
 
 //---------------------------------------------------------
-
+//  Для переключения между JSON Form и Logs
 
   const [value, setValue] = React.useState('1');
 
@@ -118,7 +85,7 @@ const App = () => {
 
 
 //---------------------------------------------------------
-
+//  Для внесения изменений в JSON Form и в форме с выводом yaml файла, так чтобы одно не сбрасывало другое
 
   const [textAreaValue, setTextAreaValue] = React.useState(YAML.stringify(formData));
 
@@ -139,6 +106,43 @@ const App = () => {
       // Handle parse error, e.g. show error message to user.
     }
   }
+
+
+//---------------------------------------------------------
+
+  //  Функция Post запрос Upload, и запись хеш файла в hashData
+  function handleClick() {
+    var yaml_text = JSON.stringify(formData)
+    // Send data to the backend via POST
+    fetch(`${serverBaseURL}/upload`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: yaml_text // body data type must match "Content-Type" header
+    }).then(response => response.json())
+      .then(data => setHashData(data))
+  }
+
+  function shareClick() {
+    var yaml_text = JSON.stringify(formData)
+    // Send data to the backend via POST
+    fetch(`${serverBaseURL}/share`, {
+      method: 'POST',
+      mode: 'no-cors',
+      headers: { 'Content-Type': 'application/json' },
+      body: yaml_text // body data type must match "Content-Type" header
+    }).then(response=>response.json())
+      .then(response=> console.log(response.json()))
+  }
+
+  //  сохранение введеных данных в форму
+  useEffect(() => {
+    const data = window.localStorage.getItem('MY_APP_STATE');
+    if ( data !== null ) setFormData(JSON.parse(data));
+  }, []);
+
+  useEffect(() => {
+    window.localStorage.setItem('MY_APP_STATE', JSON.stringify(formData));
+  }, [formData]);
 
 
 
