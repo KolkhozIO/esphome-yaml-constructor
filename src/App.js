@@ -11,7 +11,6 @@ import Tab from '@mui/material/Tab';
 import TabContext from '@mui/lab/TabContext';
 import TabList from '@mui/lab/TabList';
 import TabPanel from '@mui/lab/TabPanel';
-import { fetchEventSource } from '@microsoft/fetch-event-source';
 
 
 const App = () => {
@@ -39,40 +38,6 @@ const App = () => {
         link.click();
       });
   }
-
-  //  Get запрос logs, на получение логов построчно
-  const fetchData = async () => {
-    setSseData([]);
-    const res = await fetchEventSource(`${serverBaseURL}/logs?hash_yaml=${hashData}`,
-      {
-        method: "GET",
-        onopen(res) {
-          if (res.ok && res.status === 200) {
-            console.log("Connection Established", res);
-          } else if (
-            res.status >= 400 &&
-            res.status < 500 &&
-            res.status !== 429
-          ) {
-            console.log("Client Side Failure", res);
-          }
-        },
-        onmessage(event) {
-          console.log(event.data);
-          //  запись каждой строки в seeData
-          setSseData(prevData => prevData.concat(event.data));
-        },
-        onclose() {
-          console.log("Connection Closed by the Server");
-        },
-        onerror(err) {
-          console.log("There was an error from the Server!", err);
-        },
-      }
-    );
-  };
-
-
 
 //---------------------------------------------------------
 //  Для переключения между JSON Form и Logs
@@ -109,17 +74,20 @@ const App = () => {
 
 
 //---------------------------------------------------------
-
-  //  Функция Post запрос Upload, и запись хеш файла в hashData
   function handleClick() {
-    var yaml_text = JSON.stringify(formData)
+    var yaml_text = JSON.stringify(formData);
     // Send data to the backend via POST
     fetch(`${serverBaseURL}/upload`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: yaml_text // body data type must match "Content-Type" header
-    }).then(response => response.json())
-      .then(data => setHashData(data))
+    })
+    .then(response => response.json())
+    .then(data => {
+      console.log(data); // Выводим переменную hash_yaml в консоль браузера
+      setHashData(data);
+    })
+    .catch(error => console.error(error));
   }
 
   function shareClick() {
@@ -143,6 +111,30 @@ const App = () => {
   useEffect(() => {
     window.localStorage.setItem('MY_APP_STATE', JSON.stringify(formData));
   }, [formData]);
+
+
+  function getLogs() {
+    setSseData([]);
+    fetch(`${serverBaseURL}/logs?hash_yaml=${hashData}`)
+    .then(response => {
+      const reader = response.body.getReader();
+      let partial = '';
+      return reader.read().then(function processResult(result) {
+        const text = partial + new TextDecoder().decode(result.value || new Uint8Array, {stream: !result.done});
+        const lines = text.split(/\r?\n/);
+        partial = lines.pop() || '';
+        console.log(lines.join('\n')); // вывод логов в консоль
+        setSseData(prevData => [...prevData, ...lines]); // добавить логи в состояние
+        if (result.done) {
+          return;
+        }
+        return reader.read().then(processResult);
+      });
+    })
+    .catch(error => {
+      console.error(error);
+    });
+  }
 
 
 
@@ -177,7 +169,7 @@ const App = () => {
     }}>
       Upload
     </button>
-    <button onClick={fetchData} style={{
+    <button onClick={getLogs} style={{
       textAlign: 'center',
       width: '100px',
       border: '1px solid gray',

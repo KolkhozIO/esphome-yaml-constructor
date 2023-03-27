@@ -19,6 +19,10 @@ def get_hash_from_db(db, hash_yaml):
                                                models.Filename.compile_test == True).first()
 
 
+def get_hash_from_db_in_logs(db, hash_yaml):
+    return db.query(models.Filename).filter(models.Filename.hash_yaml == hash_yaml).first()
+
+
 def update_compile_test_in_db(db, file_name):
     update_file = get_file_from_db(db, file_name)
     update_file.compile_test = True

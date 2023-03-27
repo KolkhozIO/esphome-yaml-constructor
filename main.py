@@ -6,17 +6,19 @@ import uuid
 import yaml
 from fastapi import FastAPI, BackgroundTasks, status, Depends, Request
 from fastapi.encoders import jsonable_encoder
+from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
 from starlette.middleware.cors import CORSMiddleware
 from starlette.responses import FileResponse, JSONResponse
 from sse_starlette.sse import EventSourceResponse
+from concurrent.futures import ThreadPoolExecutor
 import uvicorn
 
 from db import models
 from db.connect import SessionLocal, engine
 from lib.methods import save_file_to_uploads, get_hash_md5, command_compil, compile_yaml_file, _read_stream
 from db.queries import add_file_to_db, get_file_from_db, get_hash_from_db, update_compile_test_in_db, \
-    delete_file_from_db, add_yaml_to_db, get_yaml_from_db
+    delete_file_from_db, add_yaml_to_db, get_yaml_from_db, get_hash_from_db_in_logs
 from settings import UPLOADED_FILES_PATH, COMPILE_DIR
 
 models.Base.metadata.create_all(engine)
@@ -73,11 +75,8 @@ async def get_share_file(file_name: str, db: Session = Depends(get_db)):
 
 
 @app.post("/upload", tags=["Upload"], status_code=status.HTTP_200_OK)
-async def upload_file(request: Request, background_tasks: BackgroundTasks = BackgroundTasks(),
-                      db: Session = Depends(get_db)):
+async def upload_file(request: Request, db: Session = Depends(get_db)):
     # переименовую и сохраняю в папку
-    # file_name = str(uuid.uuid4())
-    # format_filename(file, file_name)
     file_name = await save_file_to_uploads(request)
 
     # читаю файл и достаю esphome name
@@ -86,12 +85,13 @@ async def upload_file(request: Request, background_tasks: BackgroundTasks = Back
 
     # генерирую хеш и все добавляю в базу данных
     hash_yaml = get_hash_md5(file_name)
-    file_info_from_db = add_file_to_db(db, file_name=file_name, name_esphome=name_esphome, hash_yaml=hash_yaml,
-                                       compile_test=False)
-    # компилирую yaml файл и сохраняю в папку compile_files в фоновом режиме
-    background_tasks.add_task(compile_yaml_file, db, hash_yaml, name_esphome, file_name)
-    # await compile_yaml_file(db, hash_yaml, name_esphome, file_name)
-    print(file_info_from_db.hash_yaml)
+    old_file_info_from_db = get_hash_from_db(db, hash_yaml)
+    if old_file_info_from_db is None:
+        file_info_from_db = add_file_to_db(db, file_name=file_name, name_esphome=name_esphome, hash_yaml=hash_yaml,
+                                           compile_test=False)
+        print(file_info_from_db.name_yaml)
+        # компилирую yaml файл и сохраняю в папку compile_files в фоновом режиме
+        asyncio.create_task(compile_yaml_file(db, hash_yaml, name_esphome, file_name))
     return JSONResponse(
         status_code=status.HTTP_200_OK,
         content=hash_yaml
@@ -119,20 +119,18 @@ async def logs_compile_file(
         db: Session = Depends(get_db)
 ):
     # получаю информацию о файле из бд
-    print(hash_yaml)
-    file_info_from_db = get_hash_from_db(db, hash_yaml)
-    print(file_info_from_db.name_yaml)
+    file_info_from_db = get_hash_from_db_in_logs(db, hash_yaml)
     file_name = file_info_from_db.name_yaml
     # cmd - комманда выполнения компиляции
     cmd = command_compil(file_name)
-    print(cmd)
-    print(type(cmd))
     # процесс компиляции
-    process = subprocess.Popen(cmd,
-                               stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.STDOUT)
+    # process = subprocess.Popen(cmd,
+    #                            stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.STDOUT)
+    process = await asyncio.to_thread(subprocess.Popen, cmd,
+                                      stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
     # построчный вывод логов(генератор)
     otv = _read_stream(process.stdout)
-    return EventSourceResponse(otv)
+    return StreamingResponse(otv)
 
 
 if __name__ == "__main__":

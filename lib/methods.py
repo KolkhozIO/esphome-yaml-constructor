@@ -3,6 +3,7 @@ import hashlib
 import os
 import shutil
 import subprocess
+import threading
 import uuid
 import re
 
@@ -50,23 +51,15 @@ def command_compil(file_name):
 
 
 async def compile_yaml_file(db, hash_yaml, name_esphome, file_name):
-    old_file_info_from_db = get_hash_from_db(db, hash_yaml)
-    if old_file_info_from_db is None:
+    cmd = command_compil(file_name)
 
-        cmd = command_compil(file_name)
+    # subprocess.run(cmd)
+    process = subprocess.Popen(cmd)
+    await asyncio.to_thread(process.wait)
+    update_compile_test_in_db(db, file_name)
 
-        subprocess.run(cmd)
-
-        update_compile_test_in_db(db, file_name)
-
-        shutil.copy2(f"{UPLOADED_FILES_PATH}.esphome/build/{name_esphome}/.pioenvs/{name_esphome}/firmware.bin",
-                     f"{COMPILE_DIR}{file_name}.bin")
-
-        # os.remove(f'{UPLOADED_FILES_PATH}{file_name}.yaml')
-    else:
-        file_info_from_db = get_file_from_db(db, file_name)
-        # os.remove(f'{UPLOADED_FILES_PATH}{file_name}.yaml')
-        delete_file_from_db(db, file_info_from_db)
+    shutil.copy2(f"{UPLOADED_FILES_PATH}.esphome/build/{name_esphome}/.pioenvs/{name_esphome}/firmware.bin",
+                 f"{COMPILE_DIR}{file_name}.bin")
 
 
 async def _read_stream(stream):
