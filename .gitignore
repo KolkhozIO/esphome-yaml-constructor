@@ -7,6 +7,7 @@
 /uploaded_files/secrets.yaml
 __pycache__
 .pytest_cache
+/build
 # compiled output
 /dist
 /tmp
