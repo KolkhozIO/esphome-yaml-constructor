@@ -17,7 +17,7 @@ const App = () => {
   const [formData, setFormData] = React.useState(null);
   const [hashData, setHashData] = React.useState({});
   const [seeData, setSseData] = React.useState([]);
-  const serverBaseURL = "http://localhost:8000";
+  const serverBaseURL = "http://94.131.107.155:8000";
 
   //  Функция Post запрос compile, которая скачивает файл
   const handleDownload = () => {
@@ -142,25 +142,6 @@ const App = () => {
   return (
       <Grid container spacing={2}>
   <Grid item xs={6}>
-    <Box
-      component="form"
-      sx={{
-          '& .MuiTextField-root': { m: 1, width: '90ch' },
-      }}
-      noValidate
-      autoComplete="off"
-    >
-      <div>
-        <TextField
-          id="standard-multiline-static"
-          multiline
-          rows={48}
-          variant="standard"
-          value={textAreaValue}
-          onChange={handleTextAreaChange}
-        />
-      </div>
-    </Box>
     <button onClick={handleClick} style={{
       textAlign: 'center',
       width: '100px',
@@ -193,6 +174,25 @@ const App = () => {
     }}>
       Share
     </button>
+    <Box
+      component="form"
+      sx={{
+          '& .MuiTextField-root': { m: 1, width: '90ch' },
+      }}
+      noValidate
+      autoComplete="off"
+    >
+      <div>
+        <TextField
+          id="standard-multiline-static"
+          multiline
+          rows={48}
+          variant="standard"
+          value={textAreaValue}
+          onChange={handleTextAreaChange}
+        />
+      </div>
+    </Box>
   </Grid>
   <Grid item xs={6}>
     <Box sx={{ width: '100%', typography: 'body1' }}>

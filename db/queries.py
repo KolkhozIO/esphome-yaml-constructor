@@ -3,7 +3,7 @@ from db import models
 
 def add_file_to_db(db, **kwargs):
     new_file = models.Filename(name_yaml=kwargs['file_name'], name_esphome=kwargs['name_esphome'],
-                                  hash_yaml=kwargs['hash_yaml'])
+                               hash_yaml=kwargs['hash_yaml'])
     db.add(new_file)
     db.commit()
     db.refresh(new_file)
@@ -16,7 +16,7 @@ def get_file_from_db(db, file_name):
 
 def get_hash_from_db(db, hash_yaml):
     return db.query(models.Filename).filter(models.Filename.hash_yaml == hash_yaml,
-                                               models.Filename.compile_test == True).first()
+                                            models.Filename.compile_test == True).first()
 
 
 def get_hash_from_db_in_logs(db, hash_yaml):

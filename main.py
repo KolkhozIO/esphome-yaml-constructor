@@ -4,22 +4,19 @@ import subprocess
 import uuid
 
 import yaml
-from fastapi import FastAPI, BackgroundTasks, status, Depends, Request
+from fastapi import FastAPI, status, Depends, Request
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
 from starlette.middleware.cors import CORSMiddleware
 from starlette.responses import FileResponse, JSONResponse
-from sse_starlette.sse import EventSourceResponse
-from concurrent.futures import ThreadPoolExecutor
 import uvicorn
 
 from db import models
 from db.connect import SessionLocal, engine
 from lib.methods import save_file_to_uploads, get_hash_md5, command_compil, compile_yaml_file, _read_stream
-from db.queries import add_file_to_db, get_file_from_db, get_hash_from_db, update_compile_test_in_db, \
-    delete_file_from_db, add_yaml_to_db, get_yaml_from_db, get_hash_from_db_in_logs
-from settings import UPLOADED_FILES_PATH, COMPILE_DIR
+from db.queries import add_file_to_db, get_hash_from_db, add_yaml_to_db, get_yaml_from_db, get_hash_from_db_in_logs
+from settings import UPLOADED_FILES_PATH
 
 models.Base.metadata.create_all(engine)
 
@@ -124,8 +121,6 @@ async def logs_compile_file(
     # cmd - комманда выполнения компиляции
     cmd = command_compil(file_name)
     # процесс компиляции
-    # process = subprocess.Popen(cmd,
-    #                            stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.STDOUT)
     process = await asyncio.to_thread(subprocess.Popen, cmd,
                                       stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
     # построчный вывод логов(генератор)
