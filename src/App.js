@@ -17,7 +17,7 @@ const App = () => {
   const [formData, setFormData] = React.useState(null);
   const [hashData, setHashData] = React.useState({});
   const [seeData, setSseData] = React.useState([]);
-  const serverBaseURL = "http://94.131.107.155:8000";
+  const serverBaseURL = "https://api.kolkhoz.io";
 
   //  Функция Post запрос compile, которая скачивает файл
   const handleDownload = () => {

@@ -31,10 +31,7 @@ def get_db():
 
 app = FastAPI()
 
-origins = [
-    "http://localhost:3000",
-    "localhost:3000"
-]
+origins = ["https://app.kolkhoz.io"]
 
 app.add_middleware(
     CORSMiddleware,

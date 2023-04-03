@@ -1,0 +1,19 @@
+FROM python:3.10-bullseye
+#3.9-buster
+WORKDIR /app
+
+COPY ./requirements.txt ./requirements.txt
+RUN pip3 install -r requirements.txt
+
+COPY ./compile_files ./compile_files
+COPY ./db ./db
+COPY ./lib ./lib
+COPY ./tests ./tests
+COPY ./uploaded_files ./uploaded_files
+#COPY ./logs_test ./logs_test
+COPY ./main.py ./main.py
+COPY ./settings.py ./settings.py
+
+EXPOSE 8000
+
+CMD ["uvicorn", "main:app", "--reload" , "--host" , "0.0.0.0"]
