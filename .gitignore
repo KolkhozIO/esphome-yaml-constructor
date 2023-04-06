@@ -1,5 +1,8 @@
 # See http://help.github.com/ignore-files/ for more about ignoring files.
 
+# Venv
+/venv/
+
 # Gitignore settings for ESPHome
 # This is an example and may include too much for your use-case.
 # You can modify this file to suit your needs.

@@ -31,7 +31,7 @@ def get_db():
 
 app = FastAPI()
 
-origins = ["https://app.kolkhoz.io"]
+origins = [os.environ.get('SERVER_API_URL')]
 
 app.add_middleware(
     CORSMiddleware,

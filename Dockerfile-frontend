@@ -6,7 +6,7 @@ COPY ./package.json ./package.json
 COPY ./package-lock.json ./package-lock.json
 RUN npm ci
 RUN npm run build
-ENV NODE_ENV production
+#ENV NODE_ENV production
 EXPOSE 3000
 #CMD [ "npm","run","dev", "--host", "0.0.0.0"]
 CMD [ "npm", "run", "build", "--host" ,"0.0.0.0"]
