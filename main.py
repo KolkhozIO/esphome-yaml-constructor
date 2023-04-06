@@ -31,7 +31,7 @@ def get_db():
 
 app = FastAPI()
 
-origins = [os.environ.get('SERVER_API_URL')]
+origins = [os.environ.get('APP_URL')]
 
 app.add_middleware(
     CORSMiddleware,
