@@ -18,4 +18,3 @@ class Yamlfile(Base):
     id = Column(Integer, primary_key=True, index=True)
     uuid = Column(String)
     json_text = Column(JSON)
-

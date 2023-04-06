@@ -46,7 +46,7 @@ async def compile_yaml_file(db, name_esphome, file_name):
                  f"{COMPILE_DIR}{file_name}.bin")
 
 
-async def _read_stream(stream):
+async def read_stream(stream):
     while True:
         line = stream.readline()
         if line:

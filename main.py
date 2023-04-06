@@ -3,6 +3,7 @@ import os
 import subprocess
 import uuid
 
+import uvicorn
 import yaml
 from fastapi import FastAPI, status, Depends, Request
 from fastapi.encoders import jsonable_encoder
@@ -10,12 +11,11 @@ from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
 from starlette.middleware.cors import CORSMiddleware
 from starlette.responses import FileResponse, JSONResponse
-import uvicorn
 
 from db import models
 from db.connect import SessionLocal, engine
-from lib.methods import save_file_to_uploads, get_hash_md5, command_compil, compile_yaml_file, _read_stream
 from db.queries import add_file_to_db, get_hash_from_db, add_yaml_to_db, get_yaml_from_db
+from lib.methods import save_file_to_uploads, get_hash_md5, command_compil, compile_yaml_file, read_stream
 from settings import UPLOADED_FILES_PATH
 
 models.Base.metadata.create_all(engine)
@@ -47,6 +47,7 @@ app.add_middleware(
 
 @app.post("/share", tags=["Share"], status_code=status.HTTP_201_CREATED)
 async def create_share_file(request: Request, db: Session = Depends(get_db)):
+    # save json and file name to database, create url and return it
     json_text = await request.json()
     file_name = str(uuid.uuid4())
     add_yaml_to_db(db, file_name, json_text)
@@ -62,6 +63,7 @@ async def create_share_file(request: Request, db: Session = Depends(get_db)):
 
 @app.get("/share", tags=["Share"], status_code=status.HTTP_200_OK)
 async def get_share_file(file_name=str, db: Session = Depends(get_db)):
+    # fetches json from database and returns it
     info_file = get_yaml_from_db(db, file_name)
     json_info_file = jsonable_encoder(info_file)
     return JSONResponse(
@@ -76,40 +78,41 @@ async def validate(
     db: Session = Depends(get_db)
 ):
     file_name = await save_file_to_uploads(request)
-    # cmd - комманда выполнения компиляции
+    # cmd - compile command
     cmd = f"esphome logs {UPLOADED_FILES_PATH}{file_name}.yaml"
-    # процесс компиляции
+    # compilation process
     process = await asyncio.to_thread(subprocess.Popen, cmd,
                                       stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-    # построчный вывод логов(генератор)
-    otv = _read_stream(process.stdout)
-    # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!не забыть добавить удаление yaml файла!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    # line-by-line output of logs (generator)
+    otv = read_stream(process.stdout)
+    # deleting the created yaml file
+    os.remove(f'{UPLOADED_FILES_PATH}{file_name}.yaml')
     return StreamingResponse(otv)
 
 
 @app.post("/compile", tags=["Compile"], status_code=status.HTTP_200_OK)
 async def compile_file(request: Request, db: Session = Depends(get_db)):
-    # переименовую и сохраняю в папку
+    # rename and save to a folder
     file_name = await save_file_to_uploads(request)
 
-    # читаю файл и достаю esphome name
+    # read file and get esphome name
     read_yaml = yaml.safe_load(open(f"{UPLOADED_FILES_PATH}{file_name}.yaml"))
     name_esphome = read_yaml['esphome']['name']
 
-    # генерирую хеш и все добавляю в базу данных
+    # generate a hash and add everything to the database
     hash_yaml = get_hash_md5(file_name)
     old_file_info_from_db = get_hash_from_db(db, hash_yaml)
     if old_file_info_from_db is None:
         file_info_from_db = add_file_to_db(db, name_yaml=file_name, name_esphome=name_esphome, hash_yaml=hash_yaml,
                                            compile_test=False)
         print(file_info_from_db.name_yaml)
-        # компилирую yaml файл и сохраняю в папку compile_files в фоновом режиме
+        # compile the yaml file and save it to the compile_files folder in the background
         asyncio.create_task(compile_yaml_file(db, name_esphome, file_name))
     cmd = command_compil(file_name)
     process = await asyncio.to_thread(subprocess.Popen, cmd,
                                       stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-    # построчный вывод логов(генератор)
-    otv = _read_stream(process.stdout)
+    # line-by-line output of logs (generator)
+    otv = read_stream(process.stdout)
     return StreamingResponse(otv)
 
 
@@ -118,7 +121,7 @@ async def download_bin(
         request: Request,
         db: Session = Depends(get_db)
 ):
-    # получаю информацию о файле, удаляю yaml файл, возвращаю бинарник пользователю
+    # get information about the file, delete the yaml file, return the binary to the user
     file_name = await save_file_to_uploads(request)
     hash_yaml = get_hash_md5(file_name)
     os.remove(f'{UPLOADED_FILES_PATH}{file_name}.yaml')

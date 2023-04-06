@@ -85,7 +85,7 @@ const App = () => {
     });
   }
 
-  //  Функция Post запрос compile, которая скачивает файл
+  //  Post request compile function that downloads a file
   const handleDownload = () => {
     var yaml_text = JSON.stringify(formData);
     fetch(`${serverBaseURL}/download`, {
@@ -95,21 +95,21 @@ const App = () => {
     })
       .then(response => response.blob())
       .then(blob => {
-        // Сохраняем бинарный файл как object URL
+        // Saving the binary file as an object URL
         const url = URL.createObjectURL(blob);
 
-        // Создаем ссылку для скачивания файла
+        // Create a link to download a file
         const link = document.createElement('a');
         link.href = url;
         link.download = 'file.bin';
 
-        // Програмно кликаем по ссылке, чтобы начать скачивание
+        // Programmatically click on the link to start the download
         link.click();
       });
   }
 
 //---------------------------------------------------------
-//  Для переключения между JSON Form и Logs
+//  To switch between JSON Form and Logs
 
   const [value, setValue] = React.useState('1');
 
@@ -118,7 +118,7 @@ const App = () => {
   };
 
 //---------------------------------------------------------
-//  Для внесения изменений в JSON Form и в форме с выводом yaml файла, так чтобы одно не сбрасывало другое
+//  To make changes to a JSON Form and a yaml output form so that one doesn't override the other
 
   const [textAreaValue, setTextAreaValue] = React.useState(YAML.stringify(formData));
 
@@ -142,7 +142,7 @@ const App = () => {
 
 //---------------------------------------------------------
 
-  //  сохранение введеных данных в форму
+  //  save the entered data in the form
   useEffect(() => {
     const data = window.localStorage.getItem(`MY_APP_STATE_${window.location.pathname}`);
     if (data !== null) setFormData(JSON.parse(data));
@@ -153,21 +153,7 @@ const App = () => {
   }, [formData]);
 
 //---------------------------------------------------------
-
-  const openDeviceSession = async () => {
-  try {
-    const device = await navigator.usb.requestDevice({
-      filters: []
-    });
-    await device.open();
-    await device.selectConfiguration(1);
-    await device.claimInterface(0);
-    console.log('Device session opened');
-  } catch (error) {
-    console.error('Error opening device session:', error);
-  }
-  };
-
+  // Share
 
   const [uuidData, setUuidData] = React.useState({});
   const [sharedLink, setSharedLink] = React.useState('');
@@ -203,15 +189,32 @@ const App = () => {
     });
   }
 
-
+  // getting information from the database if the url has a uuid
   useEffect(() => {
     const searchParams = new URLSearchParams(window.location.search);
     const uuid = searchParams.get('uuid');
-    console.log("Прикол");
     if (uuid) {
       displayChareFileData(uuid);
     }
   }, []);
+
+
+//---------------------------------------------------------
+
+
+  const openDeviceSession = async () => {
+  try {
+    const device = await navigator.usb.requestDevice({
+      filters: []
+    });
+    await device.open();
+    await device.selectConfiguration(1);
+    await device.claimInterface(0);
+    console.log('Device session opened');
+  } catch (error) {
+    console.error('Error opening device session:', error);
+  }
+  };
 
 
 

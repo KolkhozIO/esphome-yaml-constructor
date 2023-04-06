@@ -16,7 +16,7 @@ def get_file_from_db(db, file_name):
 
 def get_hash_from_db(db, hash_yaml):
     return db.query(models.Filename).filter(models.Filename.hash_yaml == hash_yaml,
-                                            models.Filename.compile_test == True).first()
+                                            models.Filename.compile_test).first()
 
 
 def get_hash_from_db_in_logs(db, hash_yaml):
