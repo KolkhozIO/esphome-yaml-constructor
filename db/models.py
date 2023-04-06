@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Boolean
+from sqlalchemy import Column, Integer, String, Boolean, JSON
 from db.connect import Base
 
 
@@ -17,5 +17,5 @@ class Yamlfile(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     uuid = Column(String)
-    yaml_text = Column(String)
+    json_text = Column(JSON)
 
