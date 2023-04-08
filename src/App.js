@@ -25,6 +25,8 @@ const App = () => {
   const [formData, setFormData] = React.useState(null);
   const [hashData, setHashData] = React.useState({});
   const [seeData, setSseData] = React.useState([]);
+  const serverBaseURL = process.env.API_URL;
+  const serverFrontBaseURL = process.env.APP_URL;
   const serverBaseURL = "http://localhost:8000";
   const serverFrontBaseURL = "http://localhost:3000";
 
