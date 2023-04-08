@@ -32,7 +32,7 @@ def get_hash_md5(file_name):
 
 
 def command_compil(file_name):
-    cmd = f"esphome compile {UPLOADED_FILES_PATH}{file_name}.yaml"
+    cmd = ['esphome', 'compile', f'{UPLOADED_FILES_PATH}{file_name}.yaml']
     return cmd
 
 

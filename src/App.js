@@ -27,8 +27,6 @@ const App = () => {
   const [seeData, setSseData] = React.useState([]);
   const serverBaseURL = process.env.API_URL;
   const serverFrontBaseURL = process.env.APP_URL;
-  const serverBaseURL = "http://localhost:8000";
-  const serverFrontBaseURL = "http://localhost:3000";
 
   function handleClick() {
     setSseData([]);
