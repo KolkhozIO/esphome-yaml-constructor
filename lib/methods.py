@@ -1,16 +1,13 @@
 import asyncio
 import hashlib
-import os
 import shutil
 import subprocess
-import threading
 import uuid
 import re
 
 import yaml
-from starlette.responses import FileResponse
 
-from db.queries import get_file_from_db, get_hash_from_db, update_compile_test_in_db, delete_file_from_db
+from db.queries import update_compile_test_in_db
 from settings import UPLOADED_FILES_PATH, COMPILE_DIR
 
 
@@ -49,7 +46,7 @@ async def compile_yaml_file(db, name_esphome, file_name):
                  f"{COMPILE_DIR}{file_name}.bin")
 
 
-async def _read_stream(stream):
+async def read_stream(stream):
     while True:
         line = stream.readline()
         if line:
@@ -59,3 +56,23 @@ async def _read_stream(stream):
             yield linen
         else:
             break
+
+
+def get_hash_validate(yaml_text):
+    with yaml_text as f:
+        m = hashlib.md5()
+        while True:
+            data = f.read(8192)
+            if not data:
+                break
+            m.update(data)
+        return m.hexdigest()
+
+
+def save_file_to_validate(request):
+    req = request.query_params.get('yaml_text')
+    file_name = str(uuid.uuid4())
+    yaml_text = yaml.dump(req)
+    with open(f"{UPLOADED_FILES_PATH}{file_name}.yaml", "w") as file:
+        file.write(yaml_text)
+    return file_name

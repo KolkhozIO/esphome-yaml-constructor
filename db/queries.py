@@ -2,7 +2,7 @@ from db import models
 
 
 def add_file_to_db(db, **kwargs):
-    new_file = models.Filename(name_yaml=kwargs['file_name'], name_esphome=kwargs['name_esphome'],
+    new_file = models.Filename(name_yaml=kwargs['name_yaml'], name_esphome=kwargs['name_esphome'],
                                hash_yaml=kwargs['hash_yaml'])
     db.add(new_file)
     db.commit()
@@ -16,7 +16,7 @@ def get_file_from_db(db, file_name):
 
 def get_hash_from_db(db, hash_yaml):
     return db.query(models.Filename).filter(models.Filename.hash_yaml == hash_yaml,
-                                            models.Filename.compile_test == True).first()
+                                            models.Filename.compile_test).first()
 
 
 def get_hash_from_db_in_logs(db, hash_yaml):
@@ -37,8 +37,8 @@ def delete_file_from_db(db, file_info_from_db):
     db.commit()
 
 
-def add_yaml_to_db(db, file_name, yaml_text):
-    new_file = models.Yamlfile(uuid=file_name, yaml_text=yaml_text)
+def add_yaml_to_db(db, file_name, json_text):
+    new_file = models.Yamlfile(uuid=file_name, json_text=json_text)
     db.add(new_file)
     db.commit()
     db.refresh(new_file)
