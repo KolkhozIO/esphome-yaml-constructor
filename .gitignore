@@ -1,5 +1,8 @@
 # See http://help.github.com/ignore-files/ for more about ignoring files.
 
+# Venv
+/venv/
+
 # Gitignore settings for ESPHome
 # This is an example and may include too much for your use-case.
 # You can modify this file to suit your needs.
@@ -7,6 +10,7 @@
 /uploaded_files/secrets.yaml
 __pycache__
 .pytest_cache
+/build
 # compiled output
 /dist
 /tmp
@@ -83,9 +87,6 @@ jspm_packages/
 
 # Yarn Integrity file
 .yarn-integrity
-
-# dotenv environment variables file
-.env
 
 # next.js build output
 .next
