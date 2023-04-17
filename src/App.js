@@ -25,8 +25,8 @@ const App = () => {
   const [formData, setFormData] = React.useState(null);
   const [hashData, setHashData] = React.useState({});
   const [seeData, setSseData] = React.useState([]);
-  const serverBaseURL = process.env.API_URL;
-  const serverFrontBaseURL = process.env.APP_URL;
+  const serverBaseURL = process.env.REACT_APP_API_URL;
+  const serverFrontBaseURL = process.env.REACT_APP_APP_URL;
 
   function handleClick() {
     setSseData([]);
@@ -44,8 +44,8 @@ const App = () => {
         const text = partial + new TextDecoder().decode(result.value || new Uint8Array, {stream: !result.done});
         const lines = text.split(/\r?\n/);
         partial = lines.pop() || '';
-        console.log(lines.join('\n')); // вывод логов в консоль
-        setSseData(prevData => [...prevData, ...lines]); // добавить логи в состояние
+        console.log(lines.join('\n')); // console logs
+        setSseData(prevData => [...prevData, ...lines]); //add logs to state
         if (result.done) {
           return;
         }
@@ -72,8 +72,8 @@ const App = () => {
         const text = partial + new TextDecoder().decode(result.value || new Uint8Array, {stream: !result.done});
         const lines = text.split(/\r?\n/);
         partial = lines.pop() || '';
-        console.log(lines.join('\n')); // вывод логов в консоль
-        setSseData(prevData => [...prevData, ...lines]); // добавить логи в состояние
+        console.log(lines.join('\n')); // console logs
+        setSseData(prevData => [...prevData, ...lines]); // add logs to state
         if (result.done) {
           return;
         }
