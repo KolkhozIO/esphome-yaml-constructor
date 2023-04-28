@@ -204,7 +204,7 @@ const App = () => {
     if (formData) {
       setTextAreaValue(YAML.stringify(formData));
     }
-}, [formData]);
+  }, [formData]);
 
 
 //---------------------------------------------------------
