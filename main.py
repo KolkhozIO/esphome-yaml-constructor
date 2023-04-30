@@ -15,9 +15,8 @@ from starlette.responses import FileResponse, JSONResponse
 
 from db import models
 from db.connect import SessionLocal, engine
-from db.queries import add_file_to_db, get_hash_from_db, add_yaml_to_db, get_yaml_from_db
-from lib.methods import save_file_to_uploads, get_hash_md5, command_compil, compile_yaml_file, read_stream, \
-    post_compile_process
+from db.queries import add_file_to_db, get_hash_from_db, add_yaml_to_db, get_yaml_from_db, get_json_from_db
+from lib.methods import save_file_to_uploads, get_hash_md5, read_stream, post_compile_process
 from settings import UPLOADED_FILES_PATH
 
 models.Base.metadata.create_all(engine)
@@ -48,8 +47,13 @@ app.add_middleware(
 async def create_share_file(request: Request, db: Session = Depends(get_db)):
     # save json and file name to database, create url and return it
     json_text = await request.json()
-    file_name = str(uuid.uuid4())
-    add_yaml_to_db(db, file_name, json_text)
+    print(json_text)
+    info_json = get_json_from_db(db, json_text)
+    if info_json is not None:
+        file_name = info_json.uuid
+    else:
+        file_name = str(uuid.uuid4())
+        add_yaml_to_db(db, file_name, json_text)
     url_front = os.environ.get('APP_URL')
     url = f"{url_front}/config?uuid={file_name}"
     return JSONResponse(
@@ -74,25 +78,23 @@ async def get_share_file(file_name=str, db: Session = Depends(get_db)):
 
 @app.post("/validate", tags=["Validate"], status_code=status.HTTP_200_OK)
 async def validate(
-    request: Request,
-    background_tasks: BackgroundTasks = BackgroundTasks()
+        request: Request,
+        background_tasks: BackgroundTasks = BackgroundTasks()
 ):
     file_name = await save_file_to_uploads(request)
-    # cmd - compile command
-    cmd = f"esphome config {UPLOADED_FILES_PATH}{file_name}.yaml"
+    cmd = ['esphome', 'config', f'{UPLOADED_FILES_PATH}{file_name}.yaml']
     # compilation process
     process = await asyncio.to_thread(subprocess.Popen, cmd,
                                       stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
     # line-by-line output of logs (generator)
-    otv = read_stream(process.stdout)
+    otv = read_stream(process)
     # deleting the created yaml file
     background_tasks.add_task(os.remove, f'{UPLOADED_FILES_PATH}{file_name}.yaml')
     return StreamingResponse(otv, media_type="text/plain")
 
 
-@app.post("/compile", tags=["Compile"], status_code=status.HTTP_200_OK)
-async def compile_file(request: Request, db: Session = Depends(get_db), background_tasks: BackgroundTasks = BackgroundTasks()):
-    # rename and save to a folder
+@app.post("/saved_config", tags=["Save Config"], status_code=status.HTTP_200_OK)
+async def saved_config(request: Request, db: Session = Depends(get_db)):
     file_name = await save_file_to_uploads(request)
 
     # read file and get esphome name
@@ -103,27 +105,41 @@ async def compile_file(request: Request, db: Session = Depends(get_db), backgrou
     hash_yaml = get_hash_md5(file_name)
     old_file_info_from_db = get_hash_from_db(db, hash_yaml)
     if old_file_info_from_db is None:
-        file_info_from_db = add_file_to_db(db, name_yaml=file_name, name_esphome=name_esphome, hash_yaml=hash_yaml,
-                                           compile_test=False)
-        print(file_info_from_db.name_yaml)
+        add_file_to_db(db, name_yaml=file_name, name_esphome=name_esphome, hash_yaml=hash_yaml,
+                       compile_test=False)
+        return JSONResponse(
+            status_code=status.HTTP_201_CREATED,
+            content={'file_name': file_name}
+        )
+    else:
+        if not os.path.isfile(f"{UPLOADED_FILES_PATH}{old_file_info_from_db.name_yaml}.yaml"):
+            os.rename(f"{UPLOADED_FILES_PATH}{file_name}.yaml", f"{UPLOADED_FILES_PATH}{old_file_info_from_db.name_yaml}.yaml")
+        else:
+            os.remove(f'{UPLOADED_FILES_PATH}{file_name}.yaml')
+        return JSONResponse(
+            status_code=status.HTTP_201_CREATED,
+            content={'file_name': old_file_info_from_db.name_yaml}
+        )
+
+
+@app.post("/compile", tags=["Compile"], status_code=status.HTTP_200_OK)
+async def compile_file(request: Request, db: Session = Depends(get_db),
+                       background_tasks: BackgroundTasks = BackgroundTasks()):
+    file_name = (await request.body()).decode('utf-8')
+
     cmd = f"esphome compile {UPLOADED_FILES_PATH}{file_name}.yaml"
     process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
-    background_tasks.add_task(post_compile_process, old_file_info_from_db, file_name, name_esphome, db)
-    return StreamingResponse(read_stream(process))
+
+    background_tasks.add_task(post_compile_process, file_name, db)
+    return StreamingResponse(read_stream(process), media_type='text/event-stream')
 
 
 @app.post("/download", tags=["Download"], status_code=status.HTTP_200_OK)
 async def download_bin(
         request: Request,
-        db: Session = Depends(get_db)
 ):
     # get information about the file, delete the yaml file, return the binary to the user
-    file_name = await save_file_to_uploads(request)
-    hash_yaml = get_hash_md5(file_name)
-    os.remove(f'{UPLOADED_FILES_PATH}{file_name}.yaml')
-    file_info_from_db = get_hash_from_db(db, hash_yaml)
-    print(file_info_from_db.compile_test)
-    file_name = file_info_from_db.name_yaml
+    file_name = (await request.body()).decode('utf-8')
     return FileResponse(f"compile_files/{file_name}.bin",
                         filename=f"{file_name}.bin",
                         media_type="application/octet-stream")

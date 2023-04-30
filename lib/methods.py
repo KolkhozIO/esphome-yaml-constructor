@@ -1,5 +1,6 @@
 import asyncio
 import hashlib
+import os
 import shutil
 import subprocess
 import uuid
@@ -7,7 +8,7 @@ import re
 
 import yaml
 
-from db.queries import update_compile_test_in_db
+from db.queries import update_compile_test_in_db, get_file_from_db
 from settings import UPLOADED_FILES_PATH, COMPILE_DIR
 
 
@@ -78,8 +79,12 @@ def save_file_to_validate(request):
     return file_name
 
 
-async def post_compile_process(old_file_info_from_db, file_name, name_esphome, db):
-    if old_file_info_from_db is None:
+async def post_compile_process(file_name, db):
+    info_file = get_file_from_db(db, file_name)
+    if not info_file.compile_test:
         update_compile_test_in_db(db, file_name)
-        shutil.copy2(f"{UPLOADED_FILES_PATH}.esphome/build/{name_esphome}/.pioenvs/{name_esphome}/firmware.bin",
-                     f"{COMPILE_DIR}{file_name}.bin")
+        shutil.copy2(
+            f"{UPLOADED_FILES_PATH}.esphome/build/{info_file.name_esphome}/.pioenvs/{info_file.name_esphome}/firmware.bin",
+            f"{COMPILE_DIR}{file_name}.bin")
+    os.remove(f'{UPLOADED_FILES_PATH}{file_name}.yaml')
+
