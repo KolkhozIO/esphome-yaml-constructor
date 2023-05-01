@@ -87,7 +87,7 @@ async def validate(
     process = await asyncio.to_thread(subprocess.Popen, cmd,
                                       stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
     # line-by-line output of logs (generator)
-    otv = read_stream(process)
+    otv = read_stream(process.stdout)
     # deleting the created yaml file
     background_tasks.add_task(os.remove, f'{UPLOADED_FILES_PATH}{file_name}.yaml')
     return StreamingResponse(otv, media_type="text/plain")
@@ -131,7 +131,7 @@ async def compile_file(request: Request, db: Session = Depends(get_db),
     process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
 
     background_tasks.add_task(post_compile_process, file_name, db)
-    return StreamingResponse(read_stream(process), media_type='text/event-stream')
+    return StreamingResponse(read_stream(process.stdout), media_type='text/event-stream')
 
 
 @app.post("/download", tags=["Download"], status_code=status.HTTP_200_OK)

@@ -47,9 +47,9 @@ async def compile_yaml_file(db, name_esphome, file_name):
                  f"{COMPILE_DIR}{file_name}.bin")
 
 
-def read_stream(process):
+def read_stream(stream):
     while True:
-        line = process.stdout.readline()
+        line = stream.readline()
         if line:
             clean_line = re.sub(rb'\x1b\[([0-9]{1,2}(;[0-9]{1,2})?)?[m|K]', b'', line)
             clean_line = clean_line.decode().replace('\r', '').replace('\n', '')
