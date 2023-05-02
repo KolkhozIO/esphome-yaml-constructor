@@ -29,23 +29,28 @@ const App = () => {
   const serverBaseURL = process.env.REACT_APP_API_URL;
   const serverFrontBaseURL = process.env.REACT_APP_APP_URL;
 
+  const handleSaveConfigAndClick = () => {
+    handleSaveConfig()
+    .then((data) => handleClick(data.file_name))
+    .catch((error) => {
+      console.error(error);
+    });
+  };
+
   const handleSaveConfig = () => {
     var yaml_text = JSON.stringify(formData);
-    fetch(`${serverBaseURL}/saved_config`, {
+    return fetch(`${serverBaseURL}/saved_config`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: yaml_text
     })
-    .then(response => response.json())
-    .then(data => {
-      // Update the state with the retrieved data
-      console.log(data.file_name)
-      setFileName(data.file_name);
-      handleClick(data.file_name); // call handleClick with the file_name parameter
-    })
-    .catch(error => {
-      console.error(error);
-    });
+      .then(response => response.json())
+      .then(data => {
+        // Update the state with the retrieved data
+        console.log(data.file_name)
+        setFileName(data.file_name);
+        return data;
+      });
   };
 
   function handleClick(file_name) {
@@ -113,7 +118,13 @@ const App = () => {
       headers: { 'Content-Type': 'application/json' },
       body: file_name
     })
-      .then(response => response.blob())
+      .then(response => {
+        if (response.status === 404) {
+          console.log('The configuration was not compiled')
+          throw new Error('The configuration was not compiled')
+        }
+        return response.blob()
+      })
       .then(blob => {
         // Saving the binary file as an object URL
         const url = URL.createObjectURL(blob);
@@ -260,7 +271,7 @@ const App = () => {
     }}>
       Validate
     </button>
-    <button onClick={handleSaveConfig} style={{
+    <button onClick={handleSaveConfigAndClick} style={{
       textAlign: 'center',
       width: '100px',
       border: '1px solid gray',

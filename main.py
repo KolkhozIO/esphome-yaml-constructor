@@ -47,7 +47,6 @@ app.add_middleware(
 async def create_share_file(request: Request, db: Session = Depends(get_db)):
     # save json and file name to database, create url and return it
     json_text = await request.json()
-    print(json_text)
     info_json = get_json_from_db(db, json_text)
     if info_json is not None:
         file_name = info_json.uuid
@@ -140,9 +139,17 @@ async def download_bin(
 ):
     # get information about the file, delete the yaml file, return the binary to the user
     file_name = (await request.body()).decode('utf-8')
-    return FileResponse(f"compile_files/{file_name}.bin",
-                        filename=f"{file_name}.bin",
-                        media_type="application/octet-stream")
+    if not file_name:
+        return JSONResponse(
+            status_code=status.HTTP_404_NOT_FOUND,
+            content={
+                'message': 'The configuration was not compiled'
+            }
+        )
+    else:
+        return FileResponse(f"compile_files/{file_name}.bin",
+                            filename=f"{file_name}.bin",
+                            media_type="application/octet-stream")
 
 
 if __name__ == "__main__":
