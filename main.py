@@ -32,7 +32,7 @@ def get_db():
 
 app = FastAPI()
 
-origins = [os.environ.get('APP_URL')]
+origins = [os.environ.get('REACT_APP_APP_URL')]
 
 app.add_middleware(
     CORSMiddleware,
@@ -53,7 +53,7 @@ async def create_share_file(request: Request, db: Session = Depends(get_db)):
     else:
         file_name = str(uuid.uuid4())
         add_yaml_to_db(db, file_name, json_text)
-    url_front = os.environ.get('APP_URL')
+    url_front = os.environ.get('REACT_APP_APP_URL')
     url = f"{url_front}/config?uuid={file_name}"
     return JSONResponse(
         status_code=status.HTTP_201_CREATED,
