@@ -1,4 +1,5 @@
 import asyncio
+import json
 import os
 import subprocess
 import uuid
@@ -15,8 +16,9 @@ from starlette.responses import FileResponse, JSONResponse
 
 from db import models
 from db.connect import SessionLocal, engine
-from db.queries import add_file_to_db, get_hash_from_db, add_yaml_to_db, get_yaml_from_db, get_json_from_db
-from lib.methods import save_file_to_uploads, get_hash_md5, read_stream, post_compile_process
+from db.queries import add_file_to_db, get_hash_from_db, add_yaml_to_db, get_yaml_from_db, get_json_from_db, \
+    get_file_from_db
+from lib.methods import save_file_to_uploads, get_hash_md5, read_stream, post_compile_process, read_bin_file
 from settings import UPLOADED_FILES_PATH
 
 models.Base.metadata.create_all(engine)
@@ -99,20 +101,25 @@ async def saved_config(request: Request, db: Session = Depends(get_db)):
     # read file and get esphome name
     read_yaml = yaml.safe_load(open(f"{UPLOADED_FILES_PATH}{file_name}.yaml"))
     name_esphome = read_yaml['esphome']['name']
+    if 'esp32' in read_yaml or read_yaml['esphome'].get('platform') == "ESP32":
+        platform = "ESP32"
+    else:
+        platform = "ESP8266"
 
     # generate a hash and add everything to the database
     hash_yaml = get_hash_md5(file_name)
     old_file_info_from_db = get_hash_from_db(db, hash_yaml)
     if old_file_info_from_db is None:
         add_file_to_db(db, name_yaml=file_name, name_esphome=name_esphome, hash_yaml=hash_yaml,
-                       compile_test=False)
+                       compile_test=False, platform=platform)
         return JSONResponse(
             status_code=status.HTTP_201_CREATED,
             content={'file_name': file_name}
         )
     else:
         if not os.path.isfile(f"{UPLOADED_FILES_PATH}{old_file_info_from_db.name_yaml}.yaml"):
-            os.rename(f"{UPLOADED_FILES_PATH}{file_name}.yaml", f"{UPLOADED_FILES_PATH}{old_file_info_from_db.name_yaml}.yaml")
+            os.rename(f"{UPLOADED_FILES_PATH}{file_name}.yaml",
+                      f"{UPLOADED_FILES_PATH}{old_file_info_from_db.name_yaml}.yaml")
         else:
             os.remove(f'{UPLOADED_FILES_PATH}{file_name}.yaml')
         return JSONResponse(
@@ -139,6 +146,7 @@ async def download_bin(
 ):
     # get information about the file, delete the yaml file, return the binary to the user
     file_name = (await request.body()).decode('utf-8')
+    print(file_name)
     if not file_name:
         return JSONResponse(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -150,6 +158,31 @@ async def download_bin(
         return FileResponse(f"compile_files/{file_name}.bin",
                             filename=f"{file_name}.bin",
                             media_type="application/octet-stream")
+
+
+@app.get("/manifest/{file_name}.json")
+async def get_manifest(file_name: str, db: Session = Depends(get_db)):
+    info_file = get_file_from_db(db, file_name)
+    print(file_name)
+    platform = info_file.platform
+    bin_path = f"/bin/{file_name}.bin"
+    print(platform)
+
+    manifest_path = f"./manifest/{file_name}.json"
+    with open("./manifest/manifest.json", 'r') as file:
+        data = json.load(file)
+    print(data['builds'][0]['parts'][0]['path'])
+    data['builds'][0]['chipFamily'] = platform
+    data['builds'][0]['parts'][0]['path'] = bin_path
+    with open(manifest_path, 'w') as file:
+        json.dump(data, file, indent=2)
+    return FileResponse(manifest_path)
+
+
+@app.get("/bin/{file_name}.bin")
+async def get_manifest(file_name: str):
+    bin_path = f"./compile_files/{file_name}.bin"
+    return FileResponse(bin_path)
 
 
 if __name__ == "__main__":

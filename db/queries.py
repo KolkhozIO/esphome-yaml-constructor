@@ -3,7 +3,7 @@ from db import models
 
 def add_file_to_db(db, **kwargs):
     new_file = models.Filename(name_yaml=kwargs['name_yaml'], name_esphome=kwargs['name_esphome'],
-                               hash_yaml=kwargs['hash_yaml'])
+                               hash_yaml=kwargs['hash_yaml'], platform=kwargs['platform'])
     db.add(new_file)
     db.commit()
     db.refresh(new_file)

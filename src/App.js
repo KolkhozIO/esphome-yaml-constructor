@@ -11,23 +11,26 @@ import Tab from '@mui/material/Tab';
 import TabContext from '@mui/lab/TabContext';
 import TabList from '@mui/lab/TabList';
 import TabPanel from '@mui/lab/TabPanel';
-import {
-  BrowserRouter as Router,
-  Switch,
-  Route,
-  Link,
-  useRouteMatch,
-  useParams,
-} from 'react-router-dom';
 
 
 const App = () => {
   const [formData, setFormData] = React.useState(null);
-  const [hashData, setHashData] = React.useState({});
   const [seeData, setSseData] = React.useState([]);
   const [file_name, setFileName] = React.useState();
   const serverBaseURL = process.env.REACT_APP_API_URL;
-  const serverFrontBaseURL = process.env.REACT_APP_APP_URL;
+
+  // Добавляем состояния для отслеживания доступности кнопок
+  const [compileComplete, setCompileComplete] = React.useState(false);
+  const [isValidateDisabled, setIsValidateDisabled] = React.useState(false);
+  const [isCompileDisabled, setIsCompileDisabled] = React.useState(false);
+  const [isDownloadDisabled, setIsDownloadDisabled] = React.useState(true);
+  const [isFlashDisabled, setIsFlashDisabled] = React.useState(true);
+
+  const [validateButtonColor, setValidateButtonColor] = React.useState('#DDDDDD');
+  const [compileButtonColor, setCompileButtonColor] = React.useState('#DDDDDD');
+  const [downloadButtonColor, setDownloadButtonColor] = React.useState('#AAAAAA');
+  const [flashButtonColor, setFlashButtonColor] = React.useState('#AAAAAA');
+
 
   const handleSaveConfigAndClick = () => {
     handleSaveConfig()
@@ -53,34 +56,54 @@ const App = () => {
       });
   };
 
-  function handleClick(file_name) {
+  const handleClick = (file_name) => {
     setSseData([]);
-    var yaml_text = JSON.stringify(formData);
+    setIsValidateDisabled(true);
+    setIsCompileDisabled(true);
+    setIsDownloadDisabled(true); // Disable the Download button
+    setIsFlashDisabled(true); // Disable the Flash button
+    setDownloadButtonColor('#AAAAAA');
+    setFlashButtonColor('#AAAAAA');
+
     // Send data to the backend via POST
     fetch(`${serverBaseURL}/compile`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: file_name // body data type must match "Content-Type" header
+      body: file_name,
     })
-    .then(response => {
-      const reader = response.body.getReader();
-      let partial = '';
-      return reader.read().then(function processResult(result) {
-        const text = partial + new TextDecoder().decode(result.value || new Uint8Array, {stream: !result.done});
-        const lines = text.split(/\r?\n/);
-        partial = lines.pop() || '';
-        console.log(lines.join('\n')); // console logs
-        setSseData(prevData => [...prevData, ...lines]); // add logs to state
-        if (result.done) {
-          return;
-        }
-        return reader.read().then(processResult);
-      });
-    })
-    .catch(error => {
-      console.error(error);
-    });
-  }
+        .then((response) => {
+          const reader = response.body.getReader();
+          let partial = '';
+          return reader.read().then(function processResult(result) {
+            const text = partial + new TextDecoder().decode(result.value || new Uint8Array(), {
+              stream: !result.done,
+            });
+            const lines = text.split(/\r?\n/);
+            partial = lines.pop() || '';
+            console.log(lines.join('\n')); // console logs
+            setSseData((prevData) => [...prevData, ...lines]);
+            if (result.done) {
+              setCompileComplete(true);
+              setIsDownloadDisabled(false);
+              setIsFlashDisabled(false);
+              setDownloadButtonColor('#DDDDDD');
+              setFlashButtonColor('#DDDDDD');
+              setIsCompileDisabled(false);
+              return;
+            }
+            return reader.read().then(processResult);
+          });
+        })
+        .catch((error) => {
+          console.error(error);
+          setIsValidateDisabled(false);
+          setIsCompileDisabled(false);
+          setIsDownloadDisabled(false); // Enable the Download button if an error occurs
+          setIsFlashDisabled(false); // Enable the Flash button if an error occurs
+          setDownloadButtonColor('#DDDDDD');
+          setFlashButtonColor('#DDDDDD');
+        });
+  };
 
   function getLogsValidate() {
     setSseData([]);
@@ -100,6 +123,7 @@ const App = () => {
         console.log(lines.join('\n')); // console logs
         setSseData(prevData => [...prevData, ...lines]); // add logs to state
         if (result.done) {
+          setIsValidateDisabled(false);
           return;
         }
         return reader.read().then(processResult);
@@ -112,7 +136,6 @@ const App = () => {
 
   //  Post request compile function that downloads a file
   const handleDownload = () => {
-    var yaml_text = JSON.stringify(formData);
     fetch(`${serverBaseURL}/download`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -186,7 +209,6 @@ const App = () => {
 //---------------------------------------------------------
   // Share
 
-  const [uuidData, setUuidData] = React.useState({});
   const [sharedLink, setSharedLink] = React.useState('');
   function handleLinkClick() {
     var json_text = JSON.stringify(formData);
@@ -238,63 +260,63 @@ const App = () => {
   }, [formData]);
 
 
-//---------------------------------------------------------
-
-  // Connecting to a device via a serial port
-  const connectToSerialPort = async () => {
-    try {
-      const port = await navigator.serial.requestPort();
-      await port.open({ baudRate: 9600 });
-      console.log('Serial port connected:', port);
-
-      const writer = port.writable.getWriter();
-      await writer.write(new TextEncoder().encode('Hello world'));
-      console.log('Data sent successfully');
-
-      await writer.close();
-      await port.close();
-    } catch (error) {
-      console.error('Error connecting to serial port:', error);
-    }
-  };
-
-
-
   return (
       <Grid container spacing={2}>
   <Grid item xs={6}>
-  <button onClick={getLogsValidate} style={{
-      textAlign: 'center',
-      width: '100px',
-      border: '1px solid gray',
-      borderRadius: '5px'
-    }}>
+    <button
+        onClick={getLogsValidate}
+        style={{
+          textAlign: 'center',
+          width: '100px',
+          border: '1px solid gray',
+          borderRadius: '5px',
+          backgroundColor: validateButtonColor,
+        }}
+        disabled={isValidateDisabled}
+    >
       Validate
     </button>
-    <button onClick={handleSaveConfigAndClick} style={{
-      textAlign: 'center',
-      width: '100px',
-      border: '1px solid gray',
-      borderRadius: '5px'
-    }}>
+    <button
+        onClick={handleSaveConfigAndClick}
+        style={{
+          textAlign: 'center',
+          width: '100px',
+          border: '1px solid gray',
+          borderRadius: '5px',
+          backgroundColor: compileButtonColor,
+        }}
+        disabled={isCompileDisabled}
+    >
       Compile
     </button>
-    <button onClick={handleDownload} style={{
-      textAlign: 'center',
-      width: '100px',
-      border: '1px solid gray',
-      borderRadius: '5px'
-    }}>
+    <button
+        onClick={handleDownload}
+        style={{
+          textAlign: 'center',
+          width: '100px',
+          border: '1px solid gray',
+          borderRadius: '5px',
+          backgroundColor: downloadButtonColor,
+        }}
+        disabled={isDownloadDisabled}
+    >
       Download BIN
     </button>
-    <button onClick={connectToSerialPort} style={{
-      textAlign: 'center',
-      width: '100px',
-      border: '1px solid gray',
-      borderRadius: '5px'
-    }}>
-      Connect to device
-    </button>
+    <esp-web-install-button manifest={`http://localhost:8000/manifest/${file_name}.json`}>
+      <button
+          slot="activate"
+          style={{
+            textAlign: 'center',
+            width: '100px',
+            border: '1px solid gray',
+            borderRadius: '5px',
+            backgroundColor: flashButtonColor,
+          }}
+          disabled={isFlashDisabled}
+      >
+        Flash
+      </button>
+    </esp-web-install-button>
     <Box
       component="form"
       sx={{
@@ -314,7 +336,13 @@ const App = () => {
         />
       </div>
     </Box>
-    <button onClick={handleLinkClick}>Share Link</button>
+    <button onClick={handleLinkClick} style={{
+      textAlign: 'center',
+      width: '100px',
+      border: '1px solid gray',
+      borderRadius: '5px',
+      backgroundColor: '#DDDDDD',
+    }}>Share Link</button>
       {sharedLink && (
         <a href={sharedLink}>
           {sharedLink}
