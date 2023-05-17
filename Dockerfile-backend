@@ -11,6 +11,7 @@ COPY ./tests ./tests
 COPY ./uploaded_files ./uploaded_files
 COPY ./main.py ./main.py
 COPY ./settings.py ./settings.py
+COPY ./manifest ./manifest
 
 EXPOSE 8000
 
