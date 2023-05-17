@@ -64,6 +64,7 @@ const App = () => {
     setIsFlashDisabled(true); // Disable the Flash button
     setDownloadButtonColor('#AAAAAA');
     setFlashButtonColor('#AAAAAA');
+    setValidateButtonColor('#AAAAAA'); // Disable the Validate button
 
     // Send data to the backend via POST
     fetch(`${serverBaseURL}/compile`, {
@@ -89,6 +90,8 @@ const App = () => {
               setDownloadButtonColor('#DDDDDD');
               setFlashButtonColor('#DDDDDD');
               setIsCompileDisabled(false);
+              setIsValidateDisabled(false); // Enable the Validate button
+              setValidateButtonColor('#DDDDDD'); // Set the Validate button color to its original color
               return;
             }
             return reader.read().then(processResult);
@@ -102,6 +105,7 @@ const App = () => {
           setIsFlashDisabled(false); // Enable the Flash button if an error occurs
           setDownloadButtonColor('#DDDDDD');
           setFlashButtonColor('#DDDDDD');
+          setValidateButtonColor('#DDDDDD'); // Set the Validate button color to its original color
         });
   };
 
