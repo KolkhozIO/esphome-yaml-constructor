@@ -42,7 +42,7 @@ const App = () => {
 
   const handleSaveConfig = () => {
     var yaml_text = JSON.stringify(formData);
-    return fetch(`${serverBaseURL}/saved_config`, {
+    return fetch(`${serverBaseURL}/save_config`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: yaml_text
@@ -249,7 +249,9 @@ const App = () => {
   // getting information from the database if the url has a uuid
   useEffect(() => {
     const searchParams = new URLSearchParams(window.location.search);
+    console.log(searchParams)
     const uuid = searchParams.get('uuid');
+    console.log(uuid)
     if (uuid) {
       displayChareFileData(uuid);
     }
@@ -306,7 +308,7 @@ const App = () => {
     >
       Download BIN
     </button>
-    <esp-web-install-button manifest={`http://localhost:8000/manifest/${file_name}.json`}>
+    <esp-web-install-button manifest={`${serverBaseURL}/manifest/${file_name}`}>
       <button
           slot="activate"
           style={{

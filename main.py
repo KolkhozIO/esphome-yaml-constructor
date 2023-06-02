@@ -19,7 +19,7 @@ from db.connect import SessionLocal, engine
 from db.queries import add_file_to_db, get_hash_from_db, add_yaml_to_db, get_yaml_from_db, get_json_from_db, \
     get_file_from_db
 from lib.methods import save_file_to_uploads, get_hash_md5, read_stream, post_compile_process, read_bin_file
-from settings import UPLOADED_FILES_PATH
+from settings import UPLOADED_FILES_PATH, COMPILE_CMD, SHARE_URL
 
 models.Base.metadata.create_all(engine)
 
@@ -38,7 +38,7 @@ origins = [os.environ.get('REACT_APP_APP_URL')]
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"]
@@ -55,8 +55,7 @@ async def create_share_file(request: Request, db: Session = Depends(get_db)):
     else:
         file_name = str(uuid.uuid4())
         add_yaml_to_db(db, file_name, json_text)
-    url_front = os.environ.get('REACT_APP_APP_URL')
-    url = f"{url_front}/config?uuid={file_name}"
+    url = f"{SHARE_URL}{file_name}"
     return JSONResponse(
         status_code=status.HTTP_201_CREATED,
         content={
@@ -94,8 +93,8 @@ async def validate(
     return StreamingResponse(otv, media_type="text/plain")
 
 
-@app.post("/saved_config", tags=["Save Config"], status_code=status.HTTP_200_OK)
-async def saved_config(request: Request, db: Session = Depends(get_db)):
+@app.post("/save_config", tags=["Save Config"], status_code=status.HTTP_200_OK)
+async def save_config(request: Request, db: Session = Depends(get_db)):
     file_name = await save_file_to_uploads(request)
 
     # read file and get esphome name
@@ -133,7 +132,7 @@ async def compile_file(request: Request, db: Session = Depends(get_db),
                        background_tasks: BackgroundTasks = BackgroundTasks()):
     file_name = (await request.body()).decode('utf-8')
 
-    cmd = f"esphome compile {UPLOADED_FILES_PATH}{file_name}.yaml"
+    cmd = f"{COMPILE_CMD} {UPLOADED_FILES_PATH}{file_name}.yaml"
     process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
 
     background_tasks.add_task(post_compile_process, file_name, db)
@@ -146,7 +145,6 @@ async def download_bin(
 ):
     # get information about the file, delete the yaml file, return the binary to the user
     file_name = (await request.body()).decode('utf-8')
-    print(file_name)
     if not file_name:
         return JSONResponse(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -160,23 +158,18 @@ async def download_bin(
                             media_type="application/octet-stream")
 
 
-@app.get("/manifest/{file_name}.json")
+@app.get("/manifest/{file_name}")
 async def get_manifest(file_name: str, db: Session = Depends(get_db)):
     info_file = get_file_from_db(db, file_name)
-    print(file_name)
+
     platform = info_file.platform
     bin_path = f"/bin/{file_name}.bin"
-    print(platform)
 
-    manifest_path = f"./manifest/{file_name}.json"
-    with open("./manifest/manifest.json", 'r') as file:
+    with open("manifest.json", 'r') as file:
         data = json.load(file)
-    print(data['builds'][0]['parts'][0]['path'])
     data['builds'][0]['chipFamily'] = platform
     data['builds'][0]['parts'][0]['path'] = bin_path
-    with open(manifest_path, 'w') as file:
-        json.dump(data, file, indent=2)
-    return FileResponse(manifest_path)
+    return JSONResponse(content=data, media_type="application/json")
 
 
 @app.get("/bin/{file_name}.bin")
