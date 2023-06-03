@@ -11,51 +11,103 @@ import Tab from '@mui/material/Tab';
 import TabContext from '@mui/lab/TabContext';
 import TabList from '@mui/lab/TabList';
 import TabPanel from '@mui/lab/TabPanel';
-import {
-  BrowserRouter as Router,
-  Switch,
-  Route,
-  Link,
-  useRouteMatch,
-  useParams,
-} from 'react-router-dom';
 
 
 const App = () => {
   const [formData, setFormData] = React.useState(null);
-  const [hashData, setHashData] = React.useState({});
   const [seeData, setSseData] = React.useState([]);
-  const serverBaseURL = process.env.API_URL;
-  const serverFrontBaseURL = process.env.APP_URL;
+  const [file_name, setFileName] = React.useState();
+  const serverBaseURL = process.env.REACT_APP_API_URL;
 
-  function handleClick() {
-    setSseData([]);
+  // Добавляем состояния для отслеживания доступности кнопок
+  const [compileComplete, setCompileComplete] = React.useState(false);
+  const [isValidateDisabled, setIsValidateDisabled] = React.useState(false);
+  const [isCompileDisabled, setIsCompileDisabled] = React.useState(false);
+  const [isDownloadDisabled, setIsDownloadDisabled] = React.useState(true);
+  const [isFlashDisabled, setIsFlashDisabled] = React.useState(true);
+
+  const [validateButtonColor, setValidateButtonColor] = React.useState('#DDDDDD');
+  const [compileButtonColor, setCompileButtonColor] = React.useState('#DDDDDD');
+  const [downloadButtonColor, setDownloadButtonColor] = React.useState('#AAAAAA');
+  const [flashButtonColor, setFlashButtonColor] = React.useState('#AAAAAA');
+
+
+  const handleSaveConfigAndClick = () => {
+    handleSaveConfig()
+    .then((data) => handleClick(data.file_name))
+    .catch((error) => {
+      console.error(error);
+    });
+  };
+
+  const handleSaveConfig = () => {
     var yaml_text = JSON.stringify(formData);
+    return fetch(`${serverBaseURL}/save_config`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: yaml_text
+    })
+      .then(response => response.json())
+      .then(data => {
+        // Update the state with the retrieved data
+        console.log(data.file_name)
+        setFileName(data.file_name);
+        return data;
+      });
+  };
+
+  const handleClick = (file_name) => {
+    setSseData([]);
+    setIsValidateDisabled(true);
+    setIsCompileDisabled(true);
+    setIsDownloadDisabled(true); // Disable the Download button
+    setIsFlashDisabled(true); // Disable the Flash button
+    setDownloadButtonColor('#AAAAAA');
+    setFlashButtonColor('#AAAAAA');
+    setValidateButtonColor('#AAAAAA'); // Disable the Validate button
+
     // Send data to the backend via POST
     fetch(`${serverBaseURL}/compile`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: yaml_text // body data type must match "Content-Type" header
+      body: file_name,
     })
-    .then(response => {
-      const reader = response.body.getReader();
-      let partial = '';
-      return reader.read().then(function processResult(result) {
-        const text = partial + new TextDecoder().decode(result.value || new Uint8Array, {stream: !result.done});
-        const lines = text.split(/\r?\n/);
-        partial = lines.pop() || '';
-        console.log(lines.join('\n')); // вывод логов в консоль
-        setSseData(prevData => [...prevData, ...lines]); // добавить логи в состояние
-        if (result.done) {
-          return;
-        }
-        return reader.read().then(processResult);
-      });
-    })
-    .catch(error => {
-      console.error(error);
-    });
-  }
+        .then((response) => {
+          const reader = response.body.getReader();
+          let partial = '';
+          return reader.read().then(function processResult(result) {
+            const text = partial + new TextDecoder().decode(result.value || new Uint8Array(), {
+              stream: !result.done,
+            });
+            const lines = text.split(/\r?\n/);
+            partial = lines.pop() || '';
+            console.log(lines.join('\n')); // console logs
+            setSseData((prevData) => [...prevData, ...lines]);
+            if (result.done) {
+              setCompileComplete(true);
+              setIsDownloadDisabled(false);
+              setIsFlashDisabled(false);
+              setDownloadButtonColor('#DDDDDD');
+              setFlashButtonColor('#DDDDDD');
+              setIsCompileDisabled(false);
+              setIsValidateDisabled(false); // Enable the Validate button
+              setValidateButtonColor('#DDDDDD'); // Set the Validate button color to its original color
+              return;
+            }
+            return reader.read().then(processResult);
+          });
+        })
+        .catch((error) => {
+          console.error(error);
+          setIsValidateDisabled(false);
+          setIsCompileDisabled(false);
+          setIsDownloadDisabled(false); // Enable the Download button if an error occurs
+          setIsFlashDisabled(false); // Enable the Flash button if an error occurs
+          setDownloadButtonColor('#DDDDDD');
+          setFlashButtonColor('#DDDDDD');
+          setValidateButtonColor('#DDDDDD'); // Set the Validate button color to its original color
+        });
+  };
 
   function getLogsValidate() {
     setSseData([]);
@@ -72,9 +124,10 @@ const App = () => {
         const text = partial + new TextDecoder().decode(result.value || new Uint8Array, {stream: !result.done});
         const lines = text.split(/\r?\n/);
         partial = lines.pop() || '';
-        console.log(lines.join('\n')); // вывод логов в консоль
-        setSseData(prevData => [...prevData, ...lines]); // добавить логи в состояние
+        console.log(lines.join('\n')); // console logs
+        setSseData(prevData => [...prevData, ...lines]); // add logs to state
         if (result.done) {
+          setIsValidateDisabled(false);
           return;
         }
         return reader.read().then(processResult);
@@ -87,13 +140,18 @@ const App = () => {
 
   //  Post request compile function that downloads a file
   const handleDownload = () => {
-    var yaml_text = JSON.stringify(formData);
     fetch(`${serverBaseURL}/download`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: yaml_text
+      body: file_name
     })
-      .then(response => response.blob())
+      .then(response => {
+        if (response.status === 404) {
+          console.log('The configuration was not compiled')
+          throw new Error('The configuration was not compiled')
+        }
+        return response.blob()
+      })
       .then(blob => {
         // Saving the binary file as an object URL
         const url = URL.createObjectURL(blob);
@@ -155,7 +213,6 @@ const App = () => {
 //---------------------------------------------------------
   // Share
 
-  const [uuidData, setUuidData] = React.useState({});
   const [sharedLink, setSharedLink] = React.useState('');
   function handleLinkClick() {
     var json_text = JSON.stringify(formData);
@@ -192,67 +249,80 @@ const App = () => {
   // getting information from the database if the url has a uuid
   useEffect(() => {
     const searchParams = new URLSearchParams(window.location.search);
+    console.log(searchParams)
     const uuid = searchParams.get('uuid');
+    console.log(uuid)
     if (uuid) {
       displayChareFileData(uuid);
     }
   }, []);
 
 
-//---------------------------------------------------------
-
-
-  const openDeviceSession = async () => {
-  try {
-    const device = await navigator.usb.requestDevice({
-      filters: []
-    });
-    await device.open();
-    await device.selectConfiguration(1);
-    await device.claimInterface(0);
-    console.log('Device session opened');
-  } catch (error) {
-    console.error('Error opening device session:', error);
-  }
-  };
-
+  // Update yaml config after going to url
+  useEffect(() => {
+    if (formData) {
+      setTextAreaValue(YAML.stringify(formData));
+    }
+  }, [formData]);
 
 
   return (
       <Grid container spacing={2}>
   <Grid item xs={6}>
-  <button onClick={getLogsValidate} style={{
-      textAlign: 'center',
-      width: '100px',
-      border: '1px solid gray',
-      borderRadius: '5px'
-    }}>
+    <button
+        onClick={getLogsValidate}
+        style={{
+          textAlign: 'center',
+          width: '100px',
+          border: '1px solid gray',
+          borderRadius: '5px',
+          backgroundColor: validateButtonColor,
+        }}
+        disabled={isValidateDisabled}
+    >
       Validate
     </button>
-    <button onClick={handleClick} style={{
-      textAlign: 'center',
-      width: '100px',
-      border: '1px solid gray',
-      borderRadius: '5px'
-    }}>
+    <button
+        onClick={handleSaveConfigAndClick}
+        style={{
+          textAlign: 'center',
+          width: '100px',
+          border: '1px solid gray',
+          borderRadius: '5px',
+          backgroundColor: compileButtonColor,
+        }}
+        disabled={isCompileDisabled}
+    >
       Compile
     </button>
-    <button onClick={handleDownload} style={{
-      textAlign: 'center',
-      width: '100px',
-      border: '1px solid gray',
-      borderRadius: '5px'
-    }}>
+    <button
+        onClick={handleDownload}
+        style={{
+          textAlign: 'center',
+          width: '100px',
+          border: '1px solid gray',
+          borderRadius: '5px',
+          backgroundColor: downloadButtonColor,
+        }}
+        disabled={isDownloadDisabled}
+    >
       Download BIN
     </button>
-    <button onClick={openDeviceSession} style={{
-      textAlign: 'center',
-      width: '100px',
-      border: '1px solid gray',
-      borderRadius: '5px'
-    }}>
-      Connect to device
-    </button>
+    <esp-web-install-button manifest={`${serverBaseURL}/manifest/${file_name}`}>
+      <button
+          slot="activate"
+          style={{
+            textAlign: 'center',
+            width: '100px',
+            border: '1px solid gray',
+            borderRadius: '5px',
+            backgroundColor: flashButtonColor,
+          }}
+          disabled={isFlashDisabled}
+      >
+        Flash
+      </button>
+    </esp-web-install-button>
     <Box
       component="form"
       sx={{
@@ -272,7 +342,13 @@ const App = () => {
         />
       </div>
     </Box>
-    <button onClick={handleLinkClick}>Share Link</button>
+    <button onClick={handleLinkClick} style={{
+      textAlign: 'center',
+      width: '100px',
+      border: '1px solid gray',
+      borderRadius: '5px',
+      backgroundColor: '#DDDDDD',
+    }}>Share Link</button>
       {sharedLink && (
         <a href={sharedLink}>
           {sharedLink}
@@ -309,7 +385,5 @@ const App = () => {
 
   );
 };
-
-const About = () => <h2>Контакты</h2>;
 
 export default App;

@@ -10,6 +10,7 @@ class Filename(Base):
     name_esphome = Column(String)
     hash_yaml = Column(String)
     compile_test = Column(Boolean, default=False)
+    platform = Column(String)
 
 
 class Yamlfile(Base):
