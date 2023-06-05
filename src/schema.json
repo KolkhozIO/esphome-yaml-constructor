@@ -117,12 +117,6 @@
     "logger": {
       "type": "object",
       "title": "The logger Schema",
-      "required": [
-        "id",
-        "logs",
-        "level",
-        "baud_rate"
-      ],
       "properties": {
         "level": {
           "type": "string",
@@ -144,10 +138,6 @@
           {
             "type": "object",
             "title": "The web_server Schema",
-            "required": [
-              "port",
-              "auth"
-            ],
             "properties": {
               "port": {
                 "type": "string",
