@@ -54,34 +54,6 @@
         }
       }
     },
-    "dallas": {
-      "type": "array",
-      "title": "dallas",
-      "items": {
-        "anyOf": [
-          {
-            "type": "object",
-            "default": {},
-            "title": "dallas schema",
-            "required": [
-              "pin"
-            ],
-            "properties": {
-              "pin": {
-                "type": "string",
-                "default": "GPIO23",
-                "title": "pin"
-              }
-            }
-          }
-        ]
-      }
-    },
-    "logger": {
-      "type": "object",
-      "default": "test",
-      "title": "The logger Schema"
-    },
     "api": {
       "type": "object",
       "title": "The api Schema",
@@ -140,6 +112,90 @@
             }
           }
         }
+      }
+    },
+    "logger": {
+      "type": "object",
+      "title": "The logger Schema",
+      "required": [
+        "id",
+        "logs",
+        "level",
+        "baud_rate"
+      ],
+      "properties": {
+        "level": {
+          "type": "string",
+          "default": "debug",
+          "title": "The level Schema",
+          "enum": ["error", "warn", "info", "debug", "verbose"]
+        },
+        "baud_rate": {
+          "type": "integer",
+          "title": "The baud_rate Schema"
+        }
+      }
+    },
+    "web_server": {
+      "type": "array",
+      "title": "web_server",
+      "items": {
+        "anyOf": [
+          {
+            "type": "object",
+            "title": "The web_server Schema",
+            "required": [
+              "port",
+              "auth"
+            ],
+            "properties": {
+              "port": {
+                "type": "string",
+                "title": "The port Schema"
+              },
+              "auth": {
+                "type": "object",
+                "title": "The auth Schema",
+                "required": [
+                  "username",
+                  "password"
+                ],
+                "properties": {
+                  "username": {
+                    "type": "string",
+                    "title": "The username Schema"
+                  },
+                  "password": {
+                    "$ref": "#/definitions/properties/password"
+                  }
+                }
+              }
+            }
+          }
+        ]
+      }
+    },
+    "dallas": {
+      "type": "array",
+      "title": "dallas",
+      "items": {
+        "anyOf": [
+          {
+            "type": "object",
+            "default": {},
+            "title": "dallas schema",
+            "required": [
+              "pin"
+            ],
+            "properties": {
+              "pin": {
+                "type": "string",
+                "default": "GPIO23",
+                "title": "pin"
+              }
+            }
+          }
+        ]
       }
     },
     "captive_portal": {
@@ -363,7 +419,8 @@
         "properties": {
           "platform": {
             "const": "adc",
-            "default": "adc"
+            "default": "adc",
+            "readOnly": true
           },
           "pin": {
             "type": "string",
@@ -378,7 +435,8 @@
           "attenuation": {
             "type": "string",
             "default": "auto",
-            "title": "attenuation adc"
+            "title": "attenuation adc",
+            "enum": ["auto", "0db", "2.5db", "6db", "11db"]
           },
           "update_interval": {
             "type": "string",
@@ -406,7 +464,8 @@
         "properties": {
           "platform": {
             "const": "bme280",
-            "default": "bme280"
+            "default": "bme280",
+            "readOnly": true
           },
           "pressure": {
             "type": "object",
@@ -449,16 +508,35 @@
         "properties": {
           "platform": {
             "const": "dht",
-            "default": "dht"
+            "default": "dht",
+            "readOnly": true
           },
           "temperature": {
-            "$ref": "#/definitions/properties/temperature"
+            "type": "object",
+            "default": {},
+            "title": "temperature sensor",
+            "required": [
+              "name"
+            ],
+            "properties": {
+              "name": {
+                "type": "string",
+                "default": "",
+                "title": "temperature sensor name"
+              }
+            }
           },
           "humidity": {
             "$ref": "#/definitions/properties/humidity"
           },
           "pin": {
             "$ref": "#/definitions/properties/pin"
+          },
+          "model": {
+            "type": "string",
+            "default": "auto_detect",
+            "title": "model",
+            "enum": ["auto_detect", "dht11", "dht22", "dht22_type2", "am2302", "rht03", "si7021"]
           }
         }
       },
@@ -473,7 +551,8 @@
         "properties": {
           "platform": {
             "const": "dallas",
-            "default": "dallas"
+            "default": "dallas",
+            "readOnly": true
           },
           "name": {
             "type": "string",
@@ -497,13 +576,26 @@
         "properties": {
           "platform": {
             "const": "scd4x",
-            "default": "scd4x"
+            "default": "scd4x",
+            "readOnly": true
           },
           "co2": {
             "$ref": "#/definitions/properties/co2"
           },
           "temperature": {
-            "$ref": "#/definitions/properties/temperature"
+            "type": "object",
+            "default": {},
+            "title": "temperature sensor",
+            "required": [
+              "name"
+            ],
+            "properties": {
+              "name": {
+                "type": "string",
+                "default": "",
+                "title": "temperature sensor name"
+              }
+            }
           },
           "humidity": {
             "$ref": "#/definitions/properties/humidity"
@@ -521,7 +613,8 @@
         "properties": {
           "platform": {
             "const": "pulse",
-            "default": "pulse"
+            "default": "pulse",
+            "readOnly": true
           },
           "pin": {
             "$ref": "#/definitions/properties/pin"
@@ -544,13 +637,26 @@
         "properties": {
           "platform": {
             "const": "mhz19",
-            "default": "mhz19"
+            "default": "mhz19",
+            "readOnly": true
           },
           "co2": {
             "$ref": "#/definitions/properties/co2"
           },
           "temperature": {
-            "$ref": "#/definitions/properties/temperature"
+            "type": "object",
+            "default": {},
+            "title": "temperature sensor",
+            "required": [
+              "name"
+            ],
+            "properties": {
+              "name": {
+                "type": "string",
+                "default": "",
+                "title": "temperature sensor name"
+              }
+            }
           }
         }
       },
@@ -570,7 +676,8 @@
         "properties": {
           "platform": {
             "const": "modbus_controller",
-            "default": "modbus_controller"
+            "default": "modbus_controller",
+            "readOnly": true
           },
           "modbus_controller_id": {
             "type": "string",
@@ -620,7 +727,8 @@
           "oversampling": {
             "type": "string",
             "default": "16x",
-            "title": "oversampling"
+            "title": "oversampling",
+            "enum": ["1x", "2x", "4x", "8x", "16x"]
           }
         }
       },
