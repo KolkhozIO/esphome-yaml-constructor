@@ -300,6 +300,12 @@
       "items": {
         "anyOf": [
           {
+            "$ref": "#/definitions/sensor/none"
+          },
+          {
+            "$ref": "#/definitions/sensor/adc"
+          },
+          {
             "$ref": "#/definitions/sensor/bme"
           },
           {
@@ -319,9 +325,6 @@
           },
           {
             "$ref": "#/definitions/sensor/modbus_controller"
-          },
-          {
-            "$ref": "#/definitions/sensor/adc"
           }
         ]
       }
@@ -395,9 +398,13 @@
       }
     },
     "sensor": {
+      "none": {
+        "type": "object",
+        "title": "None"
+      },
       "adc": {
         "type": "object",
-        "title": "The adc Schema",
+        "title": "adc Schema",
         "required": [
           "platform",
           "pin",
@@ -408,9 +415,8 @@
         ],
         "properties": {
           "platform": {
-            "const": "adc",
-            "default": "adc",
-            "readOnly": true
+            "type": "string",
+            "default": "adc"
           },
           "pin": {
             "type": "string",
@@ -453,9 +459,8 @@
         ],
         "properties": {
           "platform": {
-            "const": "bme280",
-            "default": "bme280",
-            "readOnly": true
+            "type": "string",
+            "default": "bme280"
           },
           "pressure": {
             "type": "object",
@@ -497,9 +502,8 @@
         ],
         "properties": {
           "platform": {
-            "const": "dht",
-            "default": "dht",
-            "readOnly": true
+            "type": "string",
+            "default": "dht"
           },
           "temperature": {
             "type": "object",
@@ -540,9 +544,8 @@
         ],
         "properties": {
           "platform": {
-            "const": "dallas",
-            "default": "dallas",
-            "readOnly": true
+            "type": "string",
+            "default": "dallas"
           },
           "name": {
             "type": "string",
@@ -565,9 +568,8 @@
         ],
         "properties": {
           "platform": {
-            "const": "scd4x",
-            "default": "scd4x",
-            "readOnly": true
+            "type": "string",
+            "default": "scd4x"
           },
           "co2": {
             "$ref": "#/definitions/properties/co2"
@@ -602,9 +604,8 @@
         ],
         "properties": {
           "platform": {
-            "const": "pulse",
-            "default": "pulse",
-            "readOnly": true
+            "type": "string",
+            "default": "pulse"
           },
           "pin": {
             "$ref": "#/definitions/properties/pin"
@@ -626,9 +627,8 @@
         ],
         "properties": {
           "platform": {
-            "const": "mhz19",
-            "default": "mhz19",
-            "readOnly": true
+            "type": "string",
+            "default": "mhz19"
           },
           "co2": {
             "$ref": "#/definitions/properties/co2"
@@ -665,9 +665,8 @@
         ],
         "properties": {
           "platform": {
-            "const": "modbus_controller",
-            "default": "modbus_controller",
-            "readOnly": true
+            "type": "string",
+            "default": "modbus_controller"
           },
           "modbus_controller_id": {
             "type": "string",
