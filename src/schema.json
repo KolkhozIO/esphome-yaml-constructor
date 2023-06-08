@@ -131,39 +131,37 @@
       }
     },
     "web_server": {
-      "type": "array",
-      "title": "web_server",
-      "items": {
-        "anyOf": [
-          {
-            "type": "object",
-            "title": "The web_server Schema",
-            "properties": {
-              "port": {
-                "type": "string",
-                "title": "The port Schema"
-              },
-              "auth": {
-                "type": "object",
-                "title": "The auth Schema",
-                "required": [
-                  "username",
-                  "password"
-                ],
-                "properties": {
-                  "username": {
-                    "type": "string",
-                    "title": "The username Schema"
-                  },
-                  "password": {
-                    "$ref": "#/definitions/properties/password"
-                  }
+      "oneOf": [
+        {
+          "type": "null",
+          "default": null,
+          "title": "The web_server null Schema"
+        },
+        {
+          "type": "object",
+          "title": "The web_server Schema",
+          "required": ["port", "auth"],
+          "properties": {
+            "port": {
+              "type": "string",
+              "title": "The port Schema"
+            },
+            "auth": {
+              "type": "object",
+              "title": "The web_server auth Schema",
+              "properties": {
+                "username": {
+                  "type": "string",
+                  "title": "The username Schema"
+                },
+                "password": {
+                  "$ref": "#/definitions/properties/password"
                 }
               }
             }
           }
-        ]
-      }
+        }
+      ]
     },
     "dallas": {
       "type": "array",
