@@ -17,9 +17,10 @@ const App = () => {
   const [formData, setFormData] = React.useState(null);
   const [seeData, setSseData] = React.useState([]);
   const [file_name, setFileName] = React.useState();
+  const [userToken, setUserTokenData] = React.useState();
   const serverBaseURL = process.env.REACT_APP_API_URL;
 
-  // Добавляем состояния для отслеживания доступности кнопок
+  // Adding states to track button availability
   const [compileComplete, setCompileComplete] = React.useState(false);
   const [isValidateDisabled, setIsValidateDisabled] = React.useState(false);
   const [isCompileDisabled, setIsCompileDisabled] = React.useState(false);
@@ -34,7 +35,7 @@ const App = () => {
 
   const handleSaveConfigAndClick = () => {
     handleSaveConfig()
-    .then((data) => handleClick(data.file_name))
+    .then((data) => handleClick(data.name_config))
     .catch((error) => {
       console.error(error);
     });
@@ -42,7 +43,7 @@ const App = () => {
 
   const handleSaveConfig = () => {
     var yaml_text = JSON.stringify(formData);
-    return fetch(`${serverBaseURL}/save_config`, {
+    return fetch(`${serverBaseURL}/config/save_config`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: yaml_text
@@ -50,8 +51,8 @@ const App = () => {
       .then(response => response.json())
       .then(data => {
         // Update the state with the retrieved data
-        console.log(data.file_name)
-        setFileName(data.file_name);
+        console.log(data.name_config)
+        setFileName(data.name_config);
         return data;
       });
   };
@@ -67,7 +68,7 @@ const App = () => {
     setValidateButtonColor('#AAAAAA'); // Disable the Validate button
 
     // Send data to the backend via POST
-    fetch(`${serverBaseURL}/compile`, {
+    fetch(`${serverBaseURL}/config/compile`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: file_name,
@@ -112,7 +113,7 @@ const App = () => {
   function getLogsValidate() {
     setSseData([]);
     var yaml_text = JSON.stringify(formData);
-    fetch(`${serverBaseURL}/validate`, {
+    fetch(`${serverBaseURL}/config/validate`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: yaml_text
@@ -140,7 +141,7 @@ const App = () => {
 
   //  Post request compile function that downloads a file
   const handleDownload = () => {
-    fetch(`${serverBaseURL}/download`, {
+    fetch(`${serverBaseURL}/config/download`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: file_name
@@ -249,9 +250,7 @@ const App = () => {
   // getting information from the database if the url has a uuid
   useEffect(() => {
     const searchParams = new URLSearchParams(window.location.search);
-    console.log(searchParams)
     const uuid = searchParams.get('uuid');
-    console.log(uuid)
     if (uuid) {
       displayChareFileData(uuid);
     }
@@ -264,6 +263,156 @@ const App = () => {
       setTextAreaValue(YAML.stringify(formData));
     }
   }, [formData]);
+
+
+  //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+  //Registration
+  const [name, setName] = React.useState('');
+  const [surname, setSurname] = React.useState('');
+  const [email, setEmail] = React.useState('');
+  const [password, setPassword] = React.useState('');
+
+  const handleSubmit = (event) => {
+    event.preventDefault();
+
+    // Создание объекта данных для отправки на сервер
+    const userData = {
+      name,
+      surname,
+      email,
+      password,
+    };
+
+    // Отправка POST-запроса на сервер
+    fetch(`${serverBaseURL}/user`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(userData),
+    })
+      .then(response => response.json())
+      .then(data => {
+        // Обработка ответа от сервера
+        console.log(data);
+      })
+      .catch(error => {
+        // Обработка ошибки
+        console.error('Error:', error);
+      });
+  };
+
+
+  //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+  //login
+  const handleLoginSubmit = (event) => {
+    event.preventDefault();
+
+    // Создание объекта данных для отправки на сервер
+    const loginData = {
+      username: email,
+      password: password,
+    };
+
+    // Отправка POST-запроса на сервер
+    fetch(`${serverBaseURL}/login/token`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+      body: new URLSearchParams(loginData),
+    })
+      .then(response => response.json())
+      .then(data => {
+        // Обработка ответа от сервера
+        console.log(data);
+        setUserTokenData(data.access_token)
+      })
+      .catch(error => {
+        // Обработка ошибки
+        console.error('Error:', error);
+      });
+  };
+
+
+  //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+  //create favourites
+  const handleCreateFavourites = () => {
+    var json_text = JSON.stringify(formData);
+    fetch(`${serverBaseURL}/favourites`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${userToken}`
+      },
+      body: json_text
+    })
+      .then(response => response.json())
+      .then(data => {
+        // Handle the response data as needed
+        console.log(data);
+      })
+      .catch(error => {
+        console.error(error);
+      });
+  };
+
+  //get all favourites
+  const [favourites, setFavourites] = React.useState([]);
+  const [isLoggedIn, setIsLoggedIn] = React.useState(false);
+
+  const handleGetAllFavourites = () => {
+    var json_text = JSON.stringify(formData);
+    fetch(`${serverBaseURL}/favourites/all`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${userToken}`
+      }
+    })
+      .then(response => response.json())
+      .then(data => {
+        // Handle the response data as needed
+        console.log(data);
+        setFavourites(data);
+      })
+      .catch(error => {
+        console.error(error);
+      });
+  };
+
+
+  React.useEffect(() => {
+    if (value === "5" && userToken) {
+      handleGetAllFavourites();
+    }
+  }, [value, userToken]);
+
+  React.useEffect(() => {
+    setIsLoggedIn(!!userToken);
+  }, [userToken])
+
+  //get one favourites
+  const handleGetOneFavourites = (nameConfig) => {
+    fetch(`${serverBaseURL}/favourites/one?name_config=${nameConfig}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${userToken}`
+      }
+    })
+      .then(response => response.json())
+      .then(data => {
+        console.log(data);
+        setFormData(data.json_text);
+      })
+      .catch(error => {
+        console.error(error);
+      });
+  };
 
 
   return (
@@ -354,6 +503,13 @@ const App = () => {
           {sharedLink}
         </a>
       )}
+    <button onClick={handleCreateFavourites} style={{
+      textAlign: 'center',
+      width: '100px',
+      border: '1px solid gray',
+      borderRadius: '5px',
+      backgroundColor: '#DDDDDD',
+    }}>Add favourites</button>
   </Grid>
   <Grid item xs={6}>
     <Box sx={{ width: '100%', typography: 'body1' }}>
@@ -362,6 +518,9 @@ const App = () => {
           <TabList onChange={handleChange} aria-label="lab API tabs example">
             <Tab label="Json Form" value="1" />
             <Tab label="Logs" value="2" />
+            <Tab label="Registration" value="3" />
+            <Tab label="Login" value="4" />
+            <Tab label="Favourites" value="5" />
           </TabList>
         </Box>
         <TabPanel value="1">
@@ -376,6 +535,81 @@ const App = () => {
           {seeData.map((line, index) => (
             <div key={index}>{line}</div>
           ))}
+        </TabPanel>
+        <TabPanel value="3">
+          <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column' }}>
+            <input
+              type="text"
+              value={name}
+              onChange={(event) => setName(event.target.value)}
+              placeholder="Name"
+              style={{ marginBottom: '10px' }}
+            />
+            <input
+              type="text"
+              value={surname}
+              onChange={(event) => setSurname(event.target.value)}
+              placeholder="Surname"
+              style={{ marginBottom: '10px' }}
+            />
+            <input
+              type="email"
+              value={email}
+              onChange={(event) => setEmail(event.target.value)}
+              placeholder="Email"
+              style={{ marginBottom: '10px' }}
+            />
+            <input
+              type="password"
+              value={password}
+              onChange={(event) => setPassword(event.target.value)}
+              placeholder="Password"
+              style={{ marginBottom: '10px' }}
+            />
+            <button type="submit" style={{ marginTop: '10px' }}>Register</button>
+          </form>
+        </TabPanel>
+        <TabPanel value="4">
+          <form onSubmit={handleLoginSubmit} style={{ display: 'flex', flexDirection: 'column' }}>
+          <input
+            type="email"
+            value={email}
+            onChange={(event) => setEmail(event.target.value)}
+            placeholder="Email"
+            style={{ marginBottom: '10px' }}
+            required
+          />
+          <input
+            type="password"
+            value={password}
+            onChange={(event) => setPassword(event.target.value)}
+            placeholder="Password"
+            style={{ marginBottom: '10px' }}
+            required
+          />
+          <button type="submit" style={{ marginTop: '10px' }}>Login</button>
+          </form>
+        </TabPanel>
+        <TabPanel value="5">
+            {isLoggedIn ? (
+              favourites.map((favourite, index) => (
+                <button
+                  style={{
+                    textAlign: 'center',
+                    width: '100px',
+                    border: '1px solid gray',
+                    borderRadius: '5px',
+                    backgroundColor: '#DDDDDD',
+                  }}
+                  key={index}
+                  onClick={() => handleGetOneFavourites(favourite.name_config)}
+                >
+                  {favourite.name_esphome}
+                </button>
+              ))
+            ) : (
+              <div>In order to access your saved config, you need to login</div>
+            )}
         </TabPanel>
       </TabContext>
     </Box>

@@ -1,21 +1,8 @@
 version: '2'
 services:
-  frontend:
-    build:
-      context: .
-      dockerfile: Dockerfile-frontend
-    env_file:
-      - .env
-    environment:
-      - NODE_ENV=production
-    ports:
-      - "3000:3000"
-    volumes:
-      - /opt/frontend:/app/build
-    networks:
-      - my_network
-
   backend:
+    depends_on:
+      - db
     build:
       context: .
       dockerfile: Dockerfile-backend
@@ -23,6 +10,19 @@ services:
       - .env
     ports:
       - "8000:8000"
+    networks:
+      - my_network
+
+  db:
+    container_name: "db"
+    image: postgres:14.1-alpine
+    restart: always
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=postgres
+    ports:
+      - "5432:5432"
     networks:
       - my_network
 

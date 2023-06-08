@@ -12,6 +12,8 @@ COPY ./uploaded_files ./uploaded_files
 COPY ./main.py ./main.py
 COPY ./settings.py ./settings.py
 COPY ./manifest.json ./manifest.json
+COPY ./hashing.py ./hashing.py
+COPY ./api ./api
 
 EXPOSE 8000
 
