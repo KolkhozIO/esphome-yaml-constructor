@@ -163,6 +163,33 @@
         }
       ]
     },
+    "display": {
+      "type": "array",
+      "title": "display",
+      "items": {
+        "anyOf": [
+          {
+            "type": "object",
+            "title": "The lcd_pcf8574 display Schema",
+            "properties": {
+              "platform": {
+                "const": "lcd_pcf8574",
+                "default": "lcd_pcf8574",
+                "readOnly": true
+              },
+              "dimensions": {
+                "type": "string",
+                "title": "The dimensions Schema"
+              },
+              "lambda": {
+                "type": "string",
+                "title": "The dimensions Schema"
+              }
+            }
+          }
+        ]
+      }
+    },
     "dallas": {
       "type": "array",
       "title": "dallas",
