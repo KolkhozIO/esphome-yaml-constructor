@@ -4,8 +4,8 @@ import shutil
 import re
 
 import yaml
-from lib.config import _get_yamlconfig_by_nameyaml, _update_yaml_config, _get_config_by_config_json, \
-    _get_config_by_hash, _update_config_json, _create_new_json
+from lib.config import _update_yaml_config, _get_config_by_config_json, \
+    _update_config_json, get_config_by_name_or_hash, _create_new_yaml_config
 from settings import UPLOADED_FILES_PATH, COMPILE_DIR
 
 
@@ -61,7 +61,7 @@ def read_stream(stream):
 
 
 async def post_compile_process(file_name, db):
-    info_config = await _get_yamlconfig_by_nameyaml(name_config=file_name, session=db)
+    info_config = await get_config_by_name_or_hash(name_config=file_name, session=db)
     if not info_config.compile_test:
         await _update_yaml_config(name_config=file_name, session=db)
         shutil.copy2(
@@ -80,10 +80,10 @@ async def save_config_json(request, db):
     if info_old_config_json is not None:
         name_config = info_old_config_json.name_config
     else:
-        info_old_hash = await _get_config_by_hash(hash_yaml=hash_yaml, session=db)
+        info_old_hash = await get_config_by_name_or_hash(hash_yaml=hash_yaml, session=db)
         if info_old_hash is not None:
             name_config = await _update_config_json(hash_yaml=hash_yaml, config_json=json_text, session=db)
         else:
-            new_config = await _create_new_json(hash_yaml=hash_yaml, config_json=json_text, session=db)
+            new_config = await _create_new_yaml_config(hash_yaml=hash_yaml, config_json=json_text, session=db)
             name_config = new_config.name_config
     return {"name_config": name_config, "name_esphome": name_esphome}

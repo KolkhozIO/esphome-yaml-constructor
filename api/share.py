@@ -1,4 +1,5 @@
 import os
+import uuid
 
 from fastapi import APIRouter, status, Request, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -7,7 +8,7 @@ from starlette.responses import JSONResponse
 from db.connect import get_db
 from db.schemas import ShareConfigResponse
 from lib.methods import save_config_json
-from lib.config import _get_yamlconfig_by_nameyaml
+from lib.config import get_config_by_name_or_hash
 
 share_router = APIRouter()
 
@@ -22,9 +23,9 @@ async def create_share_file(request: Request, db: AsyncSession = Depends(get_db)
 
 
 @share_router.get("/", tags=["Share"], status_code=status.HTTP_200_OK)
-async def get_share_file(file_name=str, db: AsyncSession = Depends(get_db)):
+async def get_share_file(file_name:uuid.UUID, db: AsyncSession = Depends(get_db)):
     # fetches json from database and returns it
-    info_file = await _get_yamlconfig_by_nameyaml(name_config=file_name, session=db)
+    info_file = await get_config_by_name_or_hash(name_config=file_name, session=db)
     return JSONResponse(
         status_code=status.HTTP_201_CREATED,
         content={'json_text': info_file.config_json}

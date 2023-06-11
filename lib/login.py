@@ -1,6 +1,6 @@
 from datetime import datetime
 from datetime import timedelta
-from typing import Optional, Union
+from typing import Optional
 
 from fastapi import Depends, HTTPException
 from fastapi.security import OAuth2PasswordBearer
@@ -11,29 +11,16 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 import settings
 from db.connect import get_db
-from db.dals import UserDAL
-from db.models import User
-from hashing import Hasher
+from db.dals import GoogleDAL
 
 
 async def _get_user_by_email_for_auth(email: str, db: AsyncSession):
     async with db as session:
         async with session.begin():
-            user_dal = UserDAL(session)
-            return await user_dal.get_user_by_email(
+            user_dal = GoogleDAL(session)
+            return await user_dal.get_google_user(
                 email=email,
             )
-
-
-async def authenticate_user(
-    email: str, password: str, db: AsyncSession
-) -> Union[User, None]:
-    user = await _get_user_by_email_for_auth(email=email, db=db)
-    if user is None:
-        return
-    if not Hasher.verify_password(password, user.hashed_password):
-        return
-    return user
 
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/login/token")

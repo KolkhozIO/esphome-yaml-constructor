@@ -1,0 +1,24 @@
+api:
+  password: ''
+esp32:
+  board: esp32doit-devkit-v1
+  framework:
+    type: arduino
+esphome:
+  board: esp32dev
+  name: my_device4321
+  platform: ESP32
+logger: null
+ota:
+  password: ''
+sensor:
+- attenuation: 11db
+  name: A34 sensor
+  pin: GPIO34
+  platform: adc
+  update_interval: 1s
+wifi:
+  ap:
+    password: ''
+  password: rtynrtyn12071997
+  ssid: MTSRouter-050D69

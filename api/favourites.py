@@ -10,7 +10,7 @@ from db.models import User
 from lib.favourites import _create_favourites, _get_favourites_all, _delete_yaml_config, _get_favourites_by_name_config
 from lib.login import get_current_user_from_token
 from lib.methods import save_config_json
-from lib.config import _get_yamlconfig_by_nameyaml
+from lib.config import get_config_by_name_or_hash
 
 favourites_router = APIRouter()
 
@@ -63,8 +63,32 @@ async def get_favourites_json_by_id(
     favourites_availability = await _get_favourites_by_name_config(user_id=current_user.user_id, name_config=name_config, session=db)
     if favourites_availability is None:
         raise HTTPException(status_code=404, detail=f"Favorites with the name of the {name_config} are not found.")
-    info_config = await _get_yamlconfig_by_nameyaml(name_config=name_config, session=db)
+    info_config = await get_config_by_name_or_hash(name_config=name_config, session=db)
     return JSONResponse(
         status_code=status.HTTP_201_CREATED,
         content={'json_text': info_config.config_json}
     )
+
+
+@favourites_router.post("/edit")
+async def update_user_by_id(
+        name_config: uuid.UUID,
+        request: Request,
+        db: AsyncSession = Depends(get_db),
+        current_user: User = Depends(get_current_user_from_token)
+):
+    await _delete_yaml_config(user_id=current_user.user_id, name_config=name_config, session=db)
+    info_save_config = await save_config_json(request, db)
+    name_config = info_save_config['name_config']
+    name_esphome = info_save_config['name_esphome']
+
+    info_old_favourites = await _get_favourites_by_name_config(name_config=name_config,
+                                                               user_id=current_user.user_id,
+                                                               session=db)
+    if info_old_favourites is None:
+        return await _create_favourites(session=db,
+                                        user_id=current_user.user_id,
+                                        name_config=name_config,
+                                        name_esphome=name_esphome)
+    else:
+        return info_old_favourites

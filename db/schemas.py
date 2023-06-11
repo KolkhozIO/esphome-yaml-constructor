@@ -16,7 +16,7 @@ class TunedModel(BaseModel):
 
 
 class ShowUser(TunedModel):
-    user_id: uuid.UUID
+    user_id: str
     name: str
     surname: str
     email: EmailStr

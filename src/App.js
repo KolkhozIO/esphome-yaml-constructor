@@ -11,6 +11,9 @@ import Tab from '@mui/material/Tab';
 import TabContext from '@mui/lab/TabContext';
 import TabList from '@mui/lab/TabList';
 import TabPanel from '@mui/lab/TabPanel';
+import { GoogleLogin } from 'react-google-login';
+import { GoogleLogout } from 'react-google-login';
+import { gapi } from 'gapi-script'
 
 
 const App = () => {
@@ -19,6 +22,7 @@ const App = () => {
   const [file_name, setFileName] = React.useState();
   const [userToken, setUserTokenData] = React.useState();
   const serverBaseURL = process.env.REACT_APP_API_URL;
+  const clientId = "501204005049-m852f9usmg5mi42gttn28fr5h0u3p156.apps.googleusercontent.com";
 
   // Adding states to track button availability
   const [compileComplete, setCompileComplete] = React.useState(false);
@@ -265,78 +269,6 @@ const App = () => {
   }, [formData]);
 
 
-  //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
-  //Registration
-  const [name, setName] = React.useState('');
-  const [surname, setSurname] = React.useState('');
-  const [email, setEmail] = React.useState('');
-  const [password, setPassword] = React.useState('');
-
-  const handleSubmit = (event) => {
-    event.preventDefault();
-
-    // Создание объекта данных для отправки на сервер
-    const userData = {
-      name,
-      surname,
-      email,
-      password,
-    };
-
-    // Отправка POST-запроса на сервер
-    fetch(`${serverBaseURL}/user`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(userData),
-    })
-      .then(response => response.json())
-      .then(data => {
-        // Обработка ответа от сервера
-        console.log(data);
-      })
-      .catch(error => {
-        // Обработка ошибки
-        console.error('Error:', error);
-      });
-  };
-
-
-  //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
-  //login
-  const handleLoginSubmit = (event) => {
-    event.preventDefault();
-
-    // Создание объекта данных для отправки на сервер
-    const loginData = {
-      username: email,
-      password: password,
-    };
-
-    // Отправка POST-запроса на сервер
-    fetch(`${serverBaseURL}/login/token`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/x-www-form-urlencoded',
-      },
-      body: new URLSearchParams(loginData),
-    })
-      .then(response => response.json())
-      .then(data => {
-        // Обработка ответа от сервера
-        console.log(data);
-        setUserTokenData(data.access_token)
-      })
-      .catch(error => {
-        // Обработка ошибки
-        console.error('Error:', error);
-      });
-  };
-
-
   //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
   //create favourites
@@ -386,7 +318,7 @@ const App = () => {
 
 
   React.useEffect(() => {
-    if (value === "5" && userToken) {
+    if (value === "3" && userToken) {
       handleGetAllFavourites();
     }
   }, [value, userToken]);
@@ -412,6 +344,95 @@ const App = () => {
       .catch(error => {
         console.error(error);
       });
+  };
+
+
+  const handleDeleteFavourite = (nameConfig) => {
+    fetch(`${serverBaseURL}/favourites/?name_config=${nameConfig}`, {
+      method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${userToken}`
+      }
+    })
+      .then(response => response.json())
+      .then(data => {
+        console.log('Favourite deleted:', data);
+        // Обновите список избранных после успешного удаления
+        handleGetAllFavourites();
+      })
+      .catch(error => {
+        console.error(error);
+      });
+  };
+
+  const handleToggleEdit = (index) => {
+    setFavourites((prevFavourites) => {
+      const updatedFavourites = [...prevFavourites];
+      updatedFavourites[index].isEditing = !updatedFavourites[index].isEditing;
+      return updatedFavourites;
+    });
+  };
+
+  const handleSaveFavourite = (index, nameConfig) => {
+    // Выполните запрос на сохранение изменений
+    fetch(`${serverBaseURL}/favourites/edit?name_config=${nameConfig}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${userToken}`
+      },
+      body: JSON.stringify(formData)
+    })
+      .then(response => response.json())
+      .then(data => {
+        console.log('Favourite saved:', data);
+        // Обновите список избранных после успешного сохранения
+        handleGetAllFavourites();
+        setFavourites((prevFavourites) => {
+          const updatedFavourites = [...prevFavourites];
+          updatedFavourites[index].isEditing = false;
+          return updatedFavourites;
+        });
+      })
+      .catch(error => {
+        console.error(error);
+      });
+  };
+
+  //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+  const handleLogin = async (res) => {
+    console.log("LOGIN SUCCESS! Current user:", res.profileObj);
+
+    const response = await fetch(`${serverBaseURL}/google/login`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(res.profileObj),
+    });
+
+    if (response.ok) {
+      const data = await response.json();
+      console.log("Token:", data.access_token);
+      // Установите полученный токен в состояние userTokenData в app.js
+      setUserTokenData(data.access_token);
+      setIsLoggedIn(true);
+    } else {
+      console.error("Failed to login:", response.status);
+    }
+  };
+
+  const handleLogout = () => {
+    console.log("Вышел");
+    setIsLoggedIn(false);
+    setUserTokenData();
+    // Дополнительные действия при выходе из системы
+  };
+
+  const handleFailure = (error) => {
+    console.log("LOGIN FAILED! Error:", error);
   };
 
 
@@ -503,13 +524,41 @@ const App = () => {
           {sharedLink}
         </a>
       )}
-    <button onClick={handleCreateFavourites} style={{
-      textAlign: 'center',
-      width: '100px',
-      border: '1px solid gray',
-      borderRadius: '5px',
-      backgroundColor: '#DDDDDD',
-    }}>Add favourites</button>
+    <div>
+      {isLoggedIn ? (
+        <div id="signOutButton">
+          <GoogleLogout
+            clientId={clientId}
+            buttonText={"logout"}
+            onLogoutSuccess={handleLogout}
+          />
+        </div>
+      ) : (
+        <div id="signInButton">
+          <GoogleLogin
+            clientId={clientId}
+            buttonText="login"
+            onSuccess={handleLogin}
+            onFailure={handleFailure}
+            cookiePolicy={'single_host_origin'}
+            isSignedIn={true}
+          />
+        </div>
+      )}
+    </div>
+    <button
+      onClick={handleCreateFavourites}
+      style={{
+        textAlign: 'center',
+        width: '100px',
+        border: '1px solid gray',
+        borderRadius: '5px',
+        backgroundColor: isLoggedIn ? '#DDDDDD' : '#AAAAAA',
+      }}
+      disabled={!isLoggedIn}
+    >
+      Add favourites
+    </button>
   </Grid>
   <Grid item xs={6}>
     <Box sx={{ width: '100%', typography: 'body1' }}>
@@ -518,9 +567,7 @@ const App = () => {
           <TabList onChange={handleChange} aria-label="lab API tabs example">
             <Tab label="Json Form" value="1" />
             <Tab label="Logs" value="2" />
-            <Tab label="Registration" value="3" />
-            <Tab label="Login" value="4" />
-            <Tab label="Favourites" value="5" />
+            <Tab label="Favourites" value="3" />
           </TabList>
         </Box>
         <TabPanel value="1">
@@ -537,62 +584,9 @@ const App = () => {
           ))}
         </TabPanel>
         <TabPanel value="3">
-          <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column' }}>
-            <input
-              type="text"
-              value={name}
-              onChange={(event) => setName(event.target.value)}
-              placeholder="Name"
-              style={{ marginBottom: '10px' }}
-            />
-            <input
-              type="text"
-              value={surname}
-              onChange={(event) => setSurname(event.target.value)}
-              placeholder="Surname"
-              style={{ marginBottom: '10px' }}
-            />
-            <input
-              type="email"
-              value={email}
-              onChange={(event) => setEmail(event.target.value)}
-              placeholder="Email"
-              style={{ marginBottom: '10px' }}
-            />
-            <input
-              type="password"
-              value={password}
-              onChange={(event) => setPassword(event.target.value)}
-              placeholder="Password"
-              style={{ marginBottom: '10px' }}
-            />
-            <button type="submit" style={{ marginTop: '10px' }}>Register</button>
-          </form>
-        </TabPanel>
-        <TabPanel value="4">
-          <form onSubmit={handleLoginSubmit} style={{ display: 'flex', flexDirection: 'column' }}>
-          <input
-            type="email"
-            value={email}
-            onChange={(event) => setEmail(event.target.value)}
-            placeholder="Email"
-            style={{ marginBottom: '10px' }}
-            required
-          />
-          <input
-            type="password"
-            value={password}
-            onChange={(event) => setPassword(event.target.value)}
-            placeholder="Password"
-            style={{ marginBottom: '10px' }}
-            required
-          />
-          <button type="submit" style={{ marginTop: '10px' }}>Login</button>
-          </form>
-        </TabPanel>
-        <TabPanel value="5">
-            {isLoggedIn ? (
-              favourites.map((favourite, index) => (
+          {isLoggedIn ? (
+            favourites.map((favourite, index) => (
+              <div key={index}>
                 <button
                   style={{
                     textAlign: 'center',
@@ -601,15 +595,56 @@ const App = () => {
                     borderRadius: '5px',
                     backgroundColor: '#DDDDDD',
                   }}
-                  key={index}
                   onClick={() => handleGetOneFavourites(favourite.name_config)}
                 >
                   {favourite.name_esphome}
                 </button>
-              ))
-            ) : (
-              <div>In order to access your saved config, you need to login</div>
-            )}
+                {!favourite.isEditing && (
+                  <button
+                    style={{
+                      textAlign: 'center',
+                      width: '100px',
+                      border: '1px solid gray',
+                      borderRadius: '5px',
+                      backgroundColor: '#DDDDDD',
+                    }}
+                    onClick={() => handleToggleEdit(index)}
+                  >
+                    Edit
+                  </button>
+                )}
+                {favourite.isEditing && (
+                  <button
+                    style={{
+                      textAlign: 'center',
+                      width: '100px',
+                      border: '1px solid gray',
+                      borderRadius: '5px',
+                      backgroundColor: '#00FF00',
+                      color: 'white',
+                    }}
+                    onClick={() => handleSaveFavourite(index, favourite.name_config)}
+                  >
+                    Save
+                  </button>
+                )}
+                <button
+                  style={{
+                    textAlign: 'center',
+                    width: '100px',
+                    border: '1px solid gray',
+                    borderRadius: '5px',
+                    backgroundColor: '#DDDDDD',
+                  }}
+                  onClick={() => handleDeleteFavourite(favourite.name_config)}
+                >
+                  Delete
+                </button>
+              </div>
+            ))
+          ) : (
+            <div>In order to access your saved config, you need to login</div>
+          )}
         </TabPanel>
       </TabContext>
     </Box>

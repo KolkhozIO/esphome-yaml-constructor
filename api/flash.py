@@ -1,18 +1,19 @@
 import json
+import uuid
 
 from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 from starlette.responses import FileResponse, JSONResponse
 
 from db.connect import get_db
-from lib.config import _get_yamlconfig_by_nameyaml
+from lib.config import get_config_by_name_or_hash
 
 flash_router = APIRouter()
 
 
 @flash_router.get("/{file_name}")
-async def get_manifest(file_name: str, db: AsyncSession = Depends(get_db)):
-    info_file = await _get_yamlconfig_by_nameyaml(name_config=file_name, session=db)
+async def get_manifest(file_name: uuid.UUID, db: AsyncSession = Depends(get_db)):
+    info_file = await get_config_by_name_or_hash(name_config=file_name, session=db)
     platform = info_file.platform
     bin_path = f"/manifest/bin/{file_name}.bin"
     with open("manifest.json", 'r') as file:

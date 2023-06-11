@@ -12,7 +12,8 @@ from starlette.responses import JSONResponse, FileResponse
 from db.connect import get_db
 from db.schemas import SaveConfigResponse
 from lib.methods import save_file_to_uploads, read_stream, get_info_config, post_compile_process
-from lib.config import _get_yamlconfig_by_hash, _create_new_yaml_config, _update_config, _get_config_by_hash
+from lib.config import _get_yamlconfig_by_hash, _create_new_yaml_config, _update_config, \
+    get_config_by_name_or_hash
 from settings import UPLOADED_FILES_PATH, COMPILE_CMD
 
 config_router = APIRouter()
@@ -42,7 +43,7 @@ async def save_config(request: Request, db: AsyncSession = Depends(get_db)):
 
     old_file_info_from_db = await _get_yamlconfig_by_hash(hash_yaml=config_info_db['hash_yaml'], session=db)
     if old_file_info_from_db is None:
-        info_old_hash = await _get_config_by_hash(hash_yaml=config_info_db['hash_yaml'], session=db)
+        info_old_hash = await get_config_by_name_or_hash(hash_yaml=config_info_db['hash_yaml'], session=db)
         if info_old_hash is not None:
             name_config = await _update_config(hash_yaml=config_info_db['hash_yaml'],
                                                name_esphome=config_info_db['name_esphome'],
