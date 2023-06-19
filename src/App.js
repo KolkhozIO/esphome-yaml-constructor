@@ -47,7 +47,7 @@ const App = () => {
 
   const handleSaveConfig = () => {
     var yaml_text = JSON.stringify(formData);
-    return fetch(`${serverBaseURL}/config/save_config`, {
+    return fetch(`${serverBaseURL}/save_config`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: yaml_text
@@ -72,7 +72,7 @@ const App = () => {
     setValidateButtonColor('#AAAAAA'); // Disable the Validate button
 
     // Send data to the backend via POST
-    fetch(`${serverBaseURL}/config/compile`, {
+    fetch(`${serverBaseURL}/compile`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: file_name,
@@ -117,7 +117,7 @@ const App = () => {
   function getLogsValidate() {
     setSseData([]);
     var yaml_text = JSON.stringify(formData);
-    fetch(`${serverBaseURL}/config/validate`, {
+    fetch(`${serverBaseURL}/validate`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: yaml_text
@@ -145,7 +145,7 @@ const App = () => {
 
   //  Post request compile function that downloads a file
   const handleDownload = () => {
-    fetch(`${serverBaseURL}/config/download`, {
+    fetch(`${serverBaseURL}/download`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: file_name
@@ -297,7 +297,6 @@ const App = () => {
   const [isLoggedIn, setIsLoggedIn] = React.useState(false);
 
   const handleGetAllFavourites = () => {
-    var json_text = JSON.stringify(formData);
     fetch(`${serverBaseURL}/favourites/all`, {
       method: 'GET',
       headers: {

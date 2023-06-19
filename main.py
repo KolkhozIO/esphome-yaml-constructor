@@ -23,7 +23,7 @@ app.add_middleware(
 )
 
 app.include_router(share_router, prefix="/share", tags=["share"])
-app.include_router(config_router, prefix="/config", tags=["config"])
+app.include_router(config_router, tags=["config"])
 app.include_router(flash_router, prefix="/manifest", tags=["flash"])
 app.include_router(favourites_router, prefix="/favourites", tags=["favourites_router"])
 app.include_router(google_router, prefix="/google", tags=["google auth"])
