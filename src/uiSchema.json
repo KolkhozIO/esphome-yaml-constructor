@@ -1,0 +1,9 @@
+{
+  "display": {
+    "items": {
+      "lambda": {
+        "ui:widget": "textarea"
+      }
+    }
+  }
+}

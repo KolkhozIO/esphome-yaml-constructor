@@ -1,5 +1,6 @@
 import validator from "@rjsf/validator-ajv8";
 import schema from './schema.json';
+import uiSchema from './uiSchema.json'
 import Form from "@rjsf/mui";
 import { Grid } from '@mui/material';
 import YAML from 'yaml';
@@ -367,6 +368,7 @@ const App = () => {
         <TabPanel value="1">
         <Form
           schema={schema}
+          uiSchema={uiSchema}
           formData={formData}
           onChange={handleFormChange}
           validator={validator}
