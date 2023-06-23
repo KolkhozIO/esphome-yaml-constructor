@@ -183,7 +183,7 @@
               },
               "lambda": {
                 "type": "string",
-                "title": "The dimensions Schema"
+                "title": "The lambda Schema"
               }
             }
           }
