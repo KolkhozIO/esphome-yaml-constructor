@@ -347,7 +347,7 @@ const App = () => {
 
 
   const handleDeleteFavourite = (nameConfig) => {
-    fetch(`${serverBaseURL}/favourites/?name_config=${nameConfig}`, {
+    fetch(`${serverBaseURL}/favourites?name_config=${nameConfig}`, {
       method: 'DELETE',
       headers: {
         'Content-Type': 'application/json',
