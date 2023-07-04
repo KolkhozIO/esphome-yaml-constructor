@@ -22,11 +22,11 @@ app.add_middleware(
     allow_headers=["*"]
 )
 
-app.include_router(share_router, prefix="/share", tags=["share"])
-app.include_router(config_router, tags=["config"])
-app.include_router(flash_router, prefix="/manifest", tags=["flash"])
-app.include_router(favourites_router, prefix="/favourites", tags=["favourites_router"])
-app.include_router(google_router, prefix="/google", tags=["google auth"])
+app.include_router(share_router, prefix="/share", tags=["Share"])
+app.include_router(config_router, tags=["Сonfig"])
+app.include_router(flash_router, prefix="/manifest", tags=["Flash"])
+app.include_router(favourites_router, prefix="/favourites", tags=["Favourites"])
+app.include_router(google_router, prefix="/google", tags=["Google auth"])
 
 
 if __name__ == "__main__":

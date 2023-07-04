@@ -13,7 +13,7 @@ from lib.config import get_config_by_name_or_hash
 share_router = APIRouter()
 
 
-@share_router.post("/", tags=["Share"], status_code=status.HTTP_201_CREATED)
+@share_router.post("", status_code=status.HTTP_201_CREATED)
 async def create_share_file(request: Request, db: AsyncSession = Depends(get_db)):
     info_config = await save_config_json(request, db)
     name_config = info_config['name_config']
@@ -22,7 +22,7 @@ async def create_share_file(request: Request, db: AsyncSession = Depends(get_db)
     return ShareConfigResponse(uuid=name_config, url=url)
 
 
-@share_router.get("/", tags=["Share"], status_code=status.HTTP_200_OK)
+@share_router.get("", status_code=status.HTTP_200_OK)
 async def get_share_file(file_name:uuid.UUID, db: AsyncSession = Depends(get_db)):
     # fetches json from database and returns it
     info_file = await get_config_by_name_or_hash(name_config=file_name, session=db)

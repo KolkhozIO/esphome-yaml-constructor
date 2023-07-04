@@ -15,7 +15,7 @@ from lib.config import get_config_by_name_or_hash
 favourites_router = APIRouter()
 
 
-@favourites_router.post("/")
+@favourites_router.post("")
 async def create_favourites(
         request: Request,
         db: AsyncSession = Depends(get_db),
@@ -37,7 +37,7 @@ async def create_favourites(
         return info_old_favourites
 
 
-@favourites_router.delete("/")
+@favourites_router.delete("")
 async def delete_favourites(
         name_config: uuid.UUID,
         db: AsyncSession = Depends(get_db),

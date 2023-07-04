@@ -19,7 +19,7 @@ from settings import UPLOADED_FILES_PATH, COMPILE_CMD
 config_router = APIRouter()
 
 
-@config_router.post("/validate", tags=["Validate"], status_code=status.HTTP_200_OK)
+@config_router.post("/validate", status_code=status.HTTP_200_OK)
 async def validate(
         request: Request,
         background_tasks: BackgroundTasks = BackgroundTasks()
@@ -37,7 +37,7 @@ async def validate(
     return StreamingResponse(otv, media_type="text/plain")
 
 
-@config_router.post("/save_config", tags=["Save Config"], status_code=status.HTTP_200_OK)
+@config_router.post("/save_config", status_code=status.HTTP_200_OK)
 async def save_config(request: Request, db: AsyncSession = Depends(get_db)):
     config_info_db = await get_info_config(request)
 
@@ -62,7 +62,7 @@ async def save_config(request: Request, db: AsyncSession = Depends(get_db)):
         return SaveConfigResponse(name_config=old_file_info_from_db.name_config)
 
 
-@config_router.post("/compile", tags=["Compile"], status_code=status.HTTP_200_OK)
+@config_router.post("/compile", status_code=status.HTTP_200_OK)
 async def compile_file(request: Request, db: AsyncSession = Depends(get_db),
                        background_tasks: BackgroundTasks = BackgroundTasks()):
     file_name = (await request.body()).decode('utf-8')
@@ -74,7 +74,7 @@ async def compile_file(request: Request, db: AsyncSession = Depends(get_db),
     return StreamingResponse(read_stream(process.stdout), media_type='text/event-stream')
 
 
-@config_router.post("/download", tags=["Download"], status_code=status.HTTP_200_OK)
+@config_router.post("/download", status_code=status.HTTP_200_OK)
 async def download_bin(
         request: Request,
 ):
