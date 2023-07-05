@@ -15,11 +15,9 @@ share_router = APIRouter()
 
 @share_router.post("", status_code=status.HTTP_201_CREATED)
 async def create_share_file(request: Request, db: AsyncSession = Depends(get_db)):
-    info_config = await save_config_json(request, db)
-    name_config = info_config['name_config']
-    url_front = os.environ.get('REACT_APP_APP_URL')
-    url = f"{url_front}/config?uuid={name_config}"
-    return ShareConfigResponse(uuid=name_config, url=url)
+    name_config = (await save_config_json(request, db))['name_config']
+    return ShareConfigResponse(uuid=name_config, url=f"{os.environ.get('REACT_APP_APP_URL')}/config?uuid={name_config}")
+    # return ShareConfigResponse(uuid=name_config, url=url)
 
 
 @share_router.get("", status_code=status.HTTP_200_OK)

@@ -4,14 +4,12 @@ import shutil
 import re
 
 import yaml
-from lib.config import _update_yaml_config, _get_config_by_config_json, \
-    _update_config_json, get_config_by_name_or_hash, _create_new_yaml_config
+from lib.config import _update_yaml_config, _update_config_json, get_config_by_name_or_hash, _create_new_yaml_config
 from settings import UPLOADED_FILES_PATH, COMPILE_DIR
 
 
 async def save_file_to_uploads(request, file_name):
     req = await request.json()
-    print(req)
     yaml_text = yaml.dump(req)
     with open(f"{UPLOADED_FILES_PATH}{file_name}.yaml", "w") as file:
         file.write(yaml_text)
@@ -76,14 +74,12 @@ async def save_config_json(request, db):
     name_esphome = json_text['esphome'].get('name')
     hash_yaml = await get_hash_yaml(request)
 
-    info_old_config_json = await _get_config_by_config_json(hash_yaml=hash_yaml, session=db)
-    if info_old_config_json is not None:
+    info_old_config_json = await get_config_by_name_or_hash(hash_yaml=hash_yaml, session=db)
+    if info_old_config_json is not None and info_old_config_json.config_json is not None:
         name_config = info_old_config_json.name_config
+    elif info_old_config_json is not None and info_old_config_json.config_json is None:
+        name_config = await _update_config_json(hash_yaml=hash_yaml, config_json=json_text, session=db)
     else:
-        info_old_hash = await get_config_by_name_or_hash(hash_yaml=hash_yaml, session=db)
-        if info_old_hash is not None:
-            name_config = await _update_config_json(hash_yaml=hash_yaml, config_json=json_text, session=db)
-        else:
-            new_config = await _create_new_yaml_config(hash_yaml=hash_yaml, config_json=json_text, session=db)
-            name_config = new_config.name_config
+        new_config = await _create_new_yaml_config(hash_yaml=hash_yaml, config_json=json_text, session=db)
+        name_config = new_config.name_config
     return {"name_config": name_config, "name_esphome": name_esphome}

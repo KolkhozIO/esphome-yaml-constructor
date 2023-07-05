@@ -19,5 +19,4 @@ COPY ./alembic.ini ./alembic.ini
 
 EXPOSE 8000
 
-#CMD ["uvicorn", "main:app", "--reload" , "--host" , "0.0.0.0"]
 CMD ["bash", "-c", "alembic upgrade head && uvicorn main:app --reload --host 0.0.0.0"]
