@@ -1,41 +1,37 @@
 from db.dals import FavouritesDAL
 
 
-async def _create_favourites(session, user_id, name_config, name_esphome):
+async def _execute_function_with_args(func, session, *args, **kwargs):
     async with session.begin():
-        favourites_dal = FavouritesDAL(session)
-        yaml_config = await favourites_dal.create_favourites(
-            user_id=user_id,
-            name_config=name_config,
-            name_esphome=name_esphome
-        )
-        return yaml_config
+        dal = FavouritesDAL(session)
+        result = await func(dal, *args, **kwargs)
+        return result
+
+
+async def _create_favourites(session, user_id, name_config, name_esphome):
+    return await _execute_function_with_args(FavouritesDAL.create_favourites,
+                                             session,
+                                             user_id=user_id,
+                                             name_config=name_config,
+                                             name_esphome=name_esphome)
 
 
 async def _get_favourites_all(user_id, session):
-    async with session.begin():
-        favourites_dal = FavouritesDAL(session)
-        favourites_configs = await favourites_dal.get_favourites_all(
-            user_id=user_id,
-        )
-        return [{"name_config": row[0].name_config, "name_esphome": row[0].name_esphome} for row in favourites_configs]
+    favourites_configs = await _execute_function_with_args(FavouritesDAL.get_favourites_all,
+                                                           session,
+                                                           user_id=user_id)
+    return [{"name_config": row[0].name_config, "name_esphome": row[0].name_esphome} for row in favourites_configs]
 
 
 async def _get_favourites_by_name_config(user_id, name_config, session):
-    async with session.begin():
-        favourites_dal = FavouritesDAL(session)
-        favourites_configs = await favourites_dal.get_favourites_by_name_config(
-            user_id=user_id,
-            name_config=name_config
-        )
-        return favourites_configs
+    return await _execute_function_with_args(FavouritesDAL.get_favourites_by_name_config,
+                                         session,
+                                         user_id=user_id,
+                                         name_config=name_config)
 
 
 async def _delete_yaml_config(user_id, name_config, session):
-    async with session.begin():
-        favourites_dal = FavouritesDAL(session)
-        deleted_favourites = await favourites_dal.delete_favourites(
-            user_id=user_id,
-            name_config=name_config
-        )
-        return deleted_favourites
+    return await _execute_function_with_args(FavouritesDAL.delete_favourites,
+                                             session,
+                                             user_id=user_id,
+                                             name_config=name_config)
