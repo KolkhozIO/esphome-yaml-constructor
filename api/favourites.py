@@ -6,11 +6,10 @@ from starlette import status
 from starlette.responses import JSONResponse
 
 from db.connect import get_db
+from db.dals import ConfigDAL, FavouritesDAL
 from db.models import User
-from lib.favourites import _create_favourites, _get_favourites_all, _delete_yaml_config, _get_favourites_by_name_config
 from lib.login import get_current_user_from_token
-from lib.methods import save_config_json
-from lib.config import get_config_by_name_or_hash
+from lib.methods import save_config_json, _execute_function_config, _execute_function_favorites
 
 favourites_router = APIRouter()
 
@@ -25,14 +24,16 @@ async def create_favourites(
     name_config = info_save_config['name_config']
     name_esphome = info_save_config['name_esphome']
 
-    info_old_favourites = await _get_favourites_by_name_config(name_config=name_config,
-                                                               user_id=current_user.user_id,
-                                                               session=db)
+    info_old_favourites = await _execute_function_favorites(FavouritesDAL.get_favourites_by_name_config,
+                                                            session=db,
+                                                            name_config=name_config,
+                                                            user_id=current_user.user_id)
     if info_old_favourites is None:
-        return await _create_favourites(session=db,
-                                        user_id=current_user.user_id,
-                                        name_config=name_config,
-                                        name_esphome=name_esphome)
+        return await _execute_function_favorites(FavouritesDAL.create_favourites,
+                                                 session=db,
+                                                 user_id=current_user.user_id,
+                                                 name_config=name_config,
+                                                 name_esphome=name_esphome)
     else:
         return info_old_favourites
 
@@ -43,7 +44,10 @@ async def delete_favourites(
         db: AsyncSession = Depends(get_db),
         current_user: User = Depends(get_current_user_from_token)
 ):
-    return await _delete_yaml_config(user_id=current_user.user_id, name_config=name_config, session=db)
+    return await _execute_function_favorites(FavouritesDAL.delete_favourites,
+                                             session=db,
+                                             user_id=current_user.user_id,
+                                             name_config=name_config)
 
 
 @favourites_router.get("/all")
@@ -51,7 +55,10 @@ async def get_favourites_all_by_id(
         db: AsyncSession = Depends(get_db),
         current_user: User = Depends(get_current_user_from_token)
 ):
-    return await _get_favourites_all(session=db, user_id=current_user.user_id)
+    favourites_configs = await _execute_function_favorites(FavouritesDAL.get_favourites_all,
+                                                           session=db,
+                                                           user_id=current_user.user_id)
+    return [{"name_config": row[0].name_config, "name_esphome": row[0].name_esphome} for row in favourites_configs]
 
 
 @favourites_router.get("/one")
@@ -60,10 +67,15 @@ async def get_favourites_json_by_id(
         db: AsyncSession = Depends(get_db),
         current_user: User = Depends(get_current_user_from_token)
 ):
-    favourites_availability = await _get_favourites_by_name_config(user_id=current_user.user_id, name_config=name_config, session=db)
+    favourites_availability = await _execute_function_favorites(FavouritesDAL.get_favourites_by_name_config,
+                                                                session=db,
+                                                                user_id=current_user.user_id,
+                                                                name_config=name_config)
     if favourites_availability is None:
         raise HTTPException(status_code=404, detail=f"Favorites with the name of the {name_config} are not found.")
-    info_config = await get_config_by_name_or_hash(name_config=name_config, session=db)
+    info_config = await _execute_function_config(ConfigDAL.get_config,
+                                                 session=db,
+                                                 name_config=name_config)
     return JSONResponse(
         status_code=status.HTTP_201_CREATED,
         content={'json_text': info_config.config_json}
@@ -77,18 +89,23 @@ async def update_user_by_id(
         db: AsyncSession = Depends(get_db),
         current_user: User = Depends(get_current_user_from_token)
 ):
-    await _delete_yaml_config(user_id=current_user.user_id, name_config=name_config, session=db)
+    await _execute_function_favorites(FavouritesDAL.delete_favourites,
+                                      session=db,
+                                      user_id=current_user.user_id,
+                                      name_config=name_config)
     info_save_config = await save_config_json(request, db)
     name_config = info_save_config['name_config']
     name_esphome = info_save_config['name_esphome']
 
-    info_old_favourites = await _get_favourites_by_name_config(name_config=name_config,
-                                                               user_id=current_user.user_id,
-                                                               session=db)
+    info_old_favourites = await _execute_function_favorites(FavouritesDAL.get_favourites_by_name_config,
+                                                            session=db,
+                                                            name_config=name_config,
+                                                            user_id=current_user.user_id)
     if info_old_favourites is None:
-        return await _create_favourites(session=db,
-                                        user_id=current_user.user_id,
-                                        name_config=name_config,
-                                        name_esphome=name_esphome)
+        return await _execute_function_favorites(FavouritesDAL.create_favourites,
+                                                 session=db,
+                                                 user_id=current_user.user_id,
+                                                 name_config=name_config,
+                                                 name_esphome=name_esphome)
     else:
         return info_old_favourites

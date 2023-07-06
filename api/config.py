@@ -10,9 +10,10 @@ from starlette.background import BackgroundTasks
 from starlette.responses import JSONResponse, FileResponse
 
 from db.connect import get_db
+from db.dals import ConfigDAL
 from db.schemas import SaveConfigResponse
-from lib.methods import save_file_to_uploads, read_stream, get_info_config, post_compile_process
-from lib.config import _create_new_yaml_config, _update_config, get_config_by_name_or_hash
+from lib.methods import save_file_to_uploads, read_stream, get_info_config, post_compile_process, \
+    _execute_function_config
 from settings import UPLOADED_FILES_PATH, COMPILE_CMD
 
 config_router = APIRouter()
@@ -40,11 +41,15 @@ async def validate(
 async def save_config(request: Request, db: AsyncSession = Depends(get_db)):
     config_info_db = await get_info_config(request)
 
-    old_file_info_from_db = await get_config_by_name_or_hash(hash_yaml=config_info_db['hash_yaml'], session=db)
+    old_file_info_from_db = await _execute_function_config(ConfigDAL.get_config,
+                                                           session=db,
+                                                           hash_yaml=config_info_db['hash_yaml'])
     if old_file_info_from_db is not None and old_file_info_from_db.compile_test == False:
-        name_config = await _update_config(hash_yaml=config_info_db['hash_yaml'],
-                                           name_esphome=config_info_db['name_esphome'],
-                                           platform=config_info_db['platform'], session=db)
+        name_config = await _execute_function_config(ConfigDAL.update_config,
+                                       session=db,
+                                       hash_yaml=config_info_db['hash_yaml'],
+                                       name_esphome=config_info_db['name_esphome'],
+                                       platform=config_info_db['platform'])
         await save_file_to_uploads(request, file_name=name_config)
         return SaveConfigResponse(name_config=name_config)
 
@@ -54,9 +59,11 @@ async def save_config(request: Request, db: AsyncSession = Depends(get_db)):
         return SaveConfigResponse(name_config=old_file_info_from_db.name_config)
 
     else:
-        new_yaml_config = await _create_new_yaml_config(session=db, name_esphome=config_info_db['name_esphome'],
-                                                        hash_yaml=config_info_db['hash_yaml'],
-                                                        platform=config_info_db['platform'])
+        new_yaml_config = await _execute_function_config(ConfigDAL.create_yaml_config,
+                                                         session=db,
+                                                         name_esphome=config_info_db['name_esphome'],
+                                                         hash_yaml=config_info_db['hash_yaml'],
+                                                         platform=config_info_db['platform'])
         await save_file_to_uploads(request, file_name=new_yaml_config.name_config)
         return SaveConfigResponse(name_config=new_yaml_config.name_config)
 

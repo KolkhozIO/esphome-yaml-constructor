@@ -6,9 +6,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 import settings
 from db.connect import get_db
+from db.dals import GoogleDAL
 from db.schemas import Token
-from lib.googleauth import _create_google_auth, _get_google_user
 from lib.login import create_access_token
+from lib.methods import _execute_function_google
 
 google_router = APIRouter()
 
@@ -18,9 +19,16 @@ async def google_login(
         request: Request, db: AsyncSession = Depends(get_db)
 ):
     req = await request.json()
-    user = await _get_google_user(email=req['email'], session=db)
+    user = await _execute_function_google(GoogleDAL.get_google_user,
+                                          session=db,
+                                          email=req['email'])
     if user is None:
-        user = await _create_google_auth(user_id=req['googleId'], name=req['familyName'], surname=req['givenName'], email=req['email'], session=db)
+        user = await _execute_function_google(GoogleDAL.create_user,
+                                              session=db,
+                                              user_id=req['googleId'],
+                                              name=req['familyName'],
+                                              surname=req['givenName'],
+                                              email=req['email'])
     access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
     access_token = create_access_token(
         data={"sub": user.email},

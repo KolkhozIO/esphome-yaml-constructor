@@ -6,14 +6,17 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from starlette.responses import FileResponse, JSONResponse
 
 from db.connect import get_db
-from lib.config import get_config_by_name_or_hash
+from db.dals import ConfigDAL
+from lib.methods import _execute_function_config
 
 flash_router = APIRouter()
 
 
 @flash_router.get("/{file_name}")
 async def get_manifest(file_name: uuid.UUID, db: AsyncSession = Depends(get_db)):
-    info_file = await get_config_by_name_or_hash(name_config=file_name, session=db)
+    info_file = await _execute_function_config(ConfigDAL.get_config,
+                                               session=db,
+                                               name_config=file_name)
     platform = info_file.platform
     bin_path = f"/manifest/bin/{file_name}.bin"
     with open("manifest.json", 'r') as file:

@@ -424,7 +424,7 @@ const App = () => {
   };
 
   const handleLogout = () => {
-    console.log("Вышел");
+    console.log("Logout");
     setIsLoggedIn(false);
     setUserTokenData();
     // Дополнительные действия при выходе из системы

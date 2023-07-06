@@ -4,7 +4,8 @@ import shutil
 import re
 
 import yaml
-from lib.config import _update_yaml_config, _update_config_json, get_config_by_name_or_hash, _create_new_yaml_config
+
+from db.dals import ConfigDAL, FavouritesDAL, GoogleDAL
 from settings import UPLOADED_FILES_PATH, COMPILE_DIR
 
 
@@ -59,9 +60,13 @@ def read_stream(stream):
 
 
 async def post_compile_process(file_name, db):
-    info_config = await get_config_by_name_or_hash(name_config=file_name, session=db)
+    info_config = await _execute_function_config(ConfigDAL.get_config,
+                                                 session=db,
+                                                 name_config=file_name)
     if not info_config.compile_test:
-        await _update_yaml_config(name_config=file_name, session=db)
+        await _execute_function_config(ConfigDAL.update_yaml_config,
+                                       session=db,
+                                       name_config=file_name)
         shutil.copy2(
             f"{UPLOADED_FILES_PATH}.esphome/build/{info_config.name_esphome}/.pioenvs/{info_config.name_esphome}/firmware-factory.bin",
             f"{COMPILE_DIR}{file_name}.bin")
@@ -74,12 +79,44 @@ async def save_config_json(request, db):
     name_esphome = json_text['esphome'].get('name')
     hash_yaml = await get_hash_yaml(request)
 
-    info_old_config_json = await get_config_by_name_or_hash(hash_yaml=hash_yaml, session=db)
+    info_old_config_json = await _execute_function_config(ConfigDAL.get_config,
+                                                          session=db,
+                                                          hash_yaml=hash_yaml)
+    await _execute_function_config(ConfigDAL.get_config,
+                                   session=db,
+                                   hash_yaml=hash_yaml)
     if info_old_config_json is not None and info_old_config_json.config_json is not None:
         name_config = info_old_config_json.name_config
     elif info_old_config_json is not None and info_old_config_json.config_json is None:
-        name_config = await _update_config_json(hash_yaml=hash_yaml, config_json=json_text, session=db)
+        name_config = await _execute_function_config(ConfigDAL.update_config_json,
+                                                     session=db,
+                                                     hash_yaml=hash_yaml,
+                                                     config_json=json_text)
     else:
-        new_config = await _create_new_yaml_config(hash_yaml=hash_yaml, config_json=json_text, session=db)
+        new_config = await _execute_function_config(ConfigDAL.create_yaml_config,
+                                                    session=db,
+                                                    hash_yaml=hash_yaml,
+                                                    config_json=json_text)
         name_config = new_config.name_config
     return {"name_config": name_config, "name_esphome": name_esphome}
+
+
+async def _execute_function_config(func, session, *args, **kwargs):
+    async with session.begin():
+        dal = ConfigDAL(session)
+        result = await func(dal, *args, **kwargs)
+        return result
+
+
+async def _execute_function_favorites(func, session, *args, **kwargs):
+    async with session.begin():
+        dal = FavouritesDAL(session)
+        result = await func(dal, *args, **kwargs)
+        return result
+
+
+async def _execute_function_google(func, session, *args, **kwargs):
+    async with session.begin():
+        dal = GoogleDAL(session)
+        result = await func(dal, *args, **kwargs)
+        return result

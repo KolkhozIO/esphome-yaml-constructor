@@ -6,9 +6,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from starlette.responses import JSONResponse
 
 from db.connect import get_db
+from db.dals import ConfigDAL
 from db.schemas import ShareConfigResponse
-from lib.methods import save_config_json
-from lib.config import get_config_by_name_or_hash
+from lib.methods import save_config_json, _execute_function_config
 
 share_router = APIRouter()
 
@@ -23,7 +23,9 @@ async def create_share_file(request: Request, db: AsyncSession = Depends(get_db)
 @share_router.get("", status_code=status.HTTP_200_OK)
 async def get_share_file(file_name:uuid.UUID, db: AsyncSession = Depends(get_db)):
     # fetches json from database and returns it
-    info_file = await get_config_by_name_or_hash(name_config=file_name, session=db)
+    info_file = await _execute_function_config(ConfigDAL.get_config,
+                                               session=db,
+                                               name_config=file_name)
     return JSONResponse(
         status_code=status.HTTP_201_CREATED,
         content={'json_text': info_file.config_json}
