@@ -7,16 +7,17 @@ from starlette.responses import FileResponse, JSONResponse
 
 from db.connect import get_db
 from db.dals import ConfigDAL
-from lib.methods import _execute_function_config
+from lib.methods import _execute_function
 
 flash_router = APIRouter()
 
 
 @flash_router.get("/{file_name}")
 async def get_manifest(file_name: uuid.UUID, db: AsyncSession = Depends(get_db)):
-    info_file = await _execute_function_config(ConfigDAL.get_config,
-                                               session=db,
-                                               name_config=file_name)
+    info_file = await _execute_function(ConfigDAL,
+                                        ConfigDAL.get_config,
+                                        session=db,
+                                        name_config=file_name)
     platform = info_file.platform
     bin_path = f"/manifest/bin/{file_name}.bin"
     with open("manifest.json", 'r') as file:

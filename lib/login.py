@@ -12,8 +12,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 import settings
 from db.connect import get_db
 from db.dals import GoogleDAL
-from lib.methods import _execute_function_google
-
+from lib.methods import _execute_function
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/login/token")
 
@@ -34,9 +33,10 @@ async def get_current_user_from_token(
             raise credentials_exception
     except JWTError:
         raise credentials_exception
-    user = await _execute_function_google(GoogleDAL.get_google_user,
-                                          session=db,
-                                          email=email)
+    user = await _execute_function(GoogleDAL,
+                                   GoogleDAL.get_google_user,
+                                   session=db,
+                                   email=email)
     if user is None:
         raise credentials_exception
     return user
