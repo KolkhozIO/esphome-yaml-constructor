@@ -164,7 +164,7 @@ const App = () => {
         // Create a link to download a file
         const link = document.createElement('a');
         link.href = url;
-        link.download = 'file.bin';
+        link.download = `${file_name}.bin`;
 
         // Programmatically click on the link to start the download
         link.click();
@@ -286,6 +286,7 @@ const App = () => {
       .then(data => {
         // Handle the response data as needed
         console.log(data);
+        handleGetAllFavourites();
       })
       .catch(error => {
         console.error(error);
@@ -367,8 +368,30 @@ const App = () => {
 
   const handleToggleEdit = (index) => {
     setFavourites((prevFavourites) => {
-      const updatedFavourites = [...prevFavourites];
-      updatedFavourites[index].isEditing = !updatedFavourites[index].isEditing;
+      const updatedFavourites = prevFavourites.map((favourite, idx) => {
+        if (idx === index) {
+          return {
+            ...favourite,
+            isEditing: !favourite.isEditing,
+          };
+        }
+        return {
+          ...favourite,
+          isEditing: false,
+        };
+      });
+      return updatedFavourites;
+    });
+  };
+
+  const handleToggleAllEdit = () => {
+    setFavourites((prevFavourites) => {
+      const updatedFavourites = prevFavourites.map((favourite) => {
+        return {
+          ...favourite,
+          isEditing: false,
+        };
+      });
       return updatedFavourites;
     });
   };
@@ -390,7 +413,10 @@ const App = () => {
         handleGetAllFavourites();
         setFavourites((prevFavourites) => {
           const updatedFavourites = [...prevFavourites];
-          updatedFavourites[index].isEditing = false;
+          updatedFavourites[index] = {
+            ...updatedFavourites[index],
+            isEditing: false,
+          };
           return updatedFavourites;
         });
       })
@@ -594,7 +620,10 @@ const App = () => {
                     borderRadius: '5px',
                     backgroundColor: '#DDDDDD',
                   }}
-                  onClick={() => handleGetOneFavourites(favourite.name_config)}
+                  onClick={() => {
+                  handleGetOneFavourites(favourite.name_config)
+                  handleToggleAllEdit()
+                  }}
                 >
                   {favourite.name_esphome}
                 </button>
@@ -607,7 +636,10 @@ const App = () => {
                       borderRadius: '5px',
                       backgroundColor: '#DDDDDD',
                     }}
-                    onClick={() => handleToggleEdit(index)}
+                    onClick={() => {
+                    handleGetOneFavourites(favourite.name_config);
+                    handleToggleEdit(index)
+                    }}
                   >
                     Edit
                   </button>
