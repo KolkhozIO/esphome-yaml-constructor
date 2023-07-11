@@ -152,24 +152,30 @@ const App = () => {
     })
       .then(response => {
         if (response.status === 404) {
-          console.log('The configuration was not compiled')
-          throw new Error('The configuration was not compiled')
+          console.log('The configuration was not compiled');
+          throw new Error('The configuration was not compiled');
         }
-        return response.blob()
+        return response.blob().then(blob => ({ blob, response }));
       })
-      .then(blob => {
+      .then(({ blob, response }) => {
         // Saving the binary file as an object URL
         const url = URL.createObjectURL(blob);
 
-        // Create a link to download a file
+        const contentDisposition = response.headers.get('content-disposition');
+        const [, filename] = contentDisposition.match(/filename="(.+?)"/i) || [];
+
+        // Create a link to download the file
         const link = document.createElement('a');
         link.href = url;
-        link.download = `${file_name}.bin`;
+        link.download = filename || 'file.bin';
 
         // Programmatically click on the link to start the download
         link.click();
+      })
+      .catch(error => {
+        console.error('Error:', error);
       });
-  }
+  };
 
 //---------------------------------------------------------
 //  To switch between JSON Form and Logs

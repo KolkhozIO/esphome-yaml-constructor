@@ -85,7 +85,7 @@ async def compile_file(request: Request, db: AsyncSession = Depends(get_db),
 
 @config_router.post("/download", status_code=status.HTTP_200_OK)
 async def download_bin(
-        request: Request,
+        request: Request, db: AsyncSession = Depends(get_db)
 ):
     # get information about the file, delete the yaml file, return the binary to the user
     file_name = (await request.body()).decode('utf-8')
@@ -97,6 +97,12 @@ async def download_bin(
             }
         )
     else:
-        return FileResponse(f"compile_files/{file_name}.bin",
-                            filename=f"{file_name}.bin",
-                            media_type="application/octet-stream")
+        info_config = await _execute_function(ConfigDAL,
+                                              ConfigDAL.get_config,
+                                              session=db,
+                                              name_config=file_name)
+        response = FileResponse(f"compile_files/{file_name}.bin",
+                                filename=f"{info_config.name_esphome}.bin",
+                                media_type="application/octet-stream")
+        response.headers["Access-Control-Expose-Headers"] = "Content-Disposition"
+        return response
