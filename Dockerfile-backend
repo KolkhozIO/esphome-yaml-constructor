@@ -12,7 +12,11 @@ COPY ./uploaded_files ./uploaded_files
 COPY ./main.py ./main.py
 COPY ./settings.py ./settings.py
 COPY ./manifest.json ./manifest.json
+COPY ./hashing.py ./hashing.py
+COPY ./api ./api
+COPY ./migrations ./migrations
+COPY ./alembic.ini ./alembic.ini
 
 EXPOSE 8000
 
-CMD ["uvicorn", "main:app", "--reload" , "--host" , "0.0.0.0"]
+CMD ["bash", "-c", "alembic upgrade head && uvicorn main:app --reload --host 0.0.0.0"]

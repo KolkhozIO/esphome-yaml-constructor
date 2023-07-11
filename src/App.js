@@ -12,15 +12,20 @@ import Tab from '@mui/material/Tab';
 import TabContext from '@mui/lab/TabContext';
 import TabList from '@mui/lab/TabList';
 import TabPanel from '@mui/lab/TabPanel';
+import { GoogleLogin } from 'react-google-login';
+import { GoogleLogout } from 'react-google-login';
+import { gapi } from 'gapi-script'
 
 
 const App = () => {
   const [formData, setFormData] = React.useState(null);
   const [seeData, setSseData] = React.useState([]);
   const [file_name, setFileName] = React.useState();
+  const [userToken, setUserTokenData] = React.useState();
   const serverBaseURL = process.env.REACT_APP_API_URL;
+  const clientId = "501204005049-m852f9usmg5mi42gttn28fr5h0u3p156.apps.googleusercontent.com";
 
-  // Добавляем состояния для отслеживания доступности кнопок
+  // Adding states to track button availability
   const [compileComplete, setCompileComplete] = React.useState(false);
   const [isValidateDisabled, setIsValidateDisabled] = React.useState(false);
   const [isCompileDisabled, setIsCompileDisabled] = React.useState(false);
@@ -35,7 +40,7 @@ const App = () => {
 
   const handleSaveConfigAndClick = () => {
     handleSaveConfig()
-    .then((data) => handleClick(data.file_name))
+    .then((data) => handleClick(data.name_config))
     .catch((error) => {
       console.error(error);
     });
@@ -51,8 +56,8 @@ const App = () => {
       .then(response => response.json())
       .then(data => {
         // Update the state with the retrieved data
-        console.log(data.file_name)
-        setFileName(data.file_name);
+        console.log(data.name_config)
+        setFileName(data.name_config);
         return data;
       });
   };
@@ -148,24 +153,30 @@ const App = () => {
     })
       .then(response => {
         if (response.status === 404) {
-          console.log('The configuration was not compiled')
-          throw new Error('The configuration was not compiled')
+          console.log('The configuration was not compiled');
+          throw new Error('The configuration was not compiled');
         }
-        return response.blob()
+        return response.blob().then(blob => ({ blob, response }));
       })
-      .then(blob => {
+      .then(({ blob, response }) => {
         // Saving the binary file as an object URL
         const url = URL.createObjectURL(blob);
 
-        // Create a link to download a file
+        const contentDisposition = response.headers.get('content-disposition');
+        const [, filename] = contentDisposition.match(/filename="(.+?)"/i) || [];
+
+        // Create a link to download the file
         const link = document.createElement('a');
         link.href = url;
-        link.download = 'file.bin';
+        link.download = filename || 'file.bin';
 
         // Programmatically click on the link to start the download
         link.click();
+      })
+      .catch(error => {
+        console.error('Error:', error);
       });
-  }
+  };
 
 //---------------------------------------------------------
 //  To switch between JSON Form and Logs
@@ -250,9 +261,7 @@ const App = () => {
   // getting information from the database if the url has a uuid
   useEffect(() => {
     const searchParams = new URLSearchParams(window.location.search);
-    console.log(searchParams)
     const uuid = searchParams.get('uuid');
-    console.log(uuid)
     if (uuid) {
       displayChareFileData(uuid);
     }
@@ -265,6 +274,198 @@ const App = () => {
       setTextAreaValue(YAML.stringify(formData));
     }
   }, [formData]);
+
+
+  //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+  //create favourites
+  const handleCreateFavourites = () => {
+    var json_text = JSON.stringify(formData);
+    fetch(`${serverBaseURL}/favourites`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${userToken}`
+      },
+      body: json_text
+    })
+      .then(response => response.json())
+      .then(data => {
+        // Handle the response data as needed
+        console.log(data);
+        handleGetAllFavourites();
+      })
+      .catch(error => {
+        console.error(error);
+      });
+  };
+
+  //get all favourites
+  const [favourites, setFavourites] = React.useState([]);
+  const [isLoggedIn, setIsLoggedIn] = React.useState(false);
+
+  const handleGetAllFavourites = () => {
+    fetch(`${serverBaseURL}/favourites/all`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${userToken}`
+      }
+    })
+      .then(response => response.json())
+      .then(data => {
+        // Handle the response data as needed
+        console.log(data);
+        setFavourites(data);
+      })
+      .catch(error => {
+        console.error(error);
+      });
+  };
+
+
+  React.useEffect(() => {
+    if (value === "3" && userToken) {
+      handleGetAllFavourites();
+    }
+  }, [value, userToken]);
+
+  React.useEffect(() => {
+    setIsLoggedIn(!!userToken);
+  }, [userToken])
+
+  //get one favourites
+  const handleGetOneFavourites = (nameConfig) => {
+    fetch(`${serverBaseURL}/favourites/one?name_config=${nameConfig}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${userToken}`
+      }
+    })
+      .then(response => response.json())
+      .then(data => {
+        console.log(data);
+        setFormData(data.json_text);
+      })
+      .catch(error => {
+        console.error(error);
+      });
+  };
+
+
+  const handleDeleteFavourite = (nameConfig) => {
+    fetch(`${serverBaseURL}/favourites?name_config=${nameConfig}`, {
+      method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${userToken}`
+      }
+    })
+      .then(response => response.json())
+      .then(data => {
+        console.log('Favourite deleted:', data);
+        // Обновите список избранных после успешного удаления
+        handleGetAllFavourites();
+      })
+      .catch(error => {
+        console.error(error);
+      });
+  };
+
+  const handleToggleEdit = (index) => {
+    setFavourites((prevFavourites) => {
+      const updatedFavourites = prevFavourites.map((favourite, idx) => {
+        if (idx === index) {
+          return {
+            ...favourite,
+            isEditing: !favourite.isEditing,
+          };
+        }
+        return {
+          ...favourite,
+          isEditing: false,
+        };
+      });
+      return updatedFavourites;
+    });
+  };
+
+  const handleToggleAllEdit = () => {
+    setFavourites((prevFavourites) => {
+      const updatedFavourites = prevFavourites.map((favourite) => {
+        return {
+          ...favourite,
+          isEditing: false,
+        };
+      });
+      return updatedFavourites;
+    });
+  };
+
+  const handleSaveFavourite = (index, nameConfig) => {
+    // Выполните запрос на сохранение изменений
+    fetch(`${serverBaseURL}/favourites/edit?name_config=${nameConfig}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${userToken}`
+      },
+      body: JSON.stringify(formData)
+    })
+      .then(response => response.json())
+      .then(data => {
+        console.log('Favourite saved:', data);
+        // Обновите список избранных после успешного сохранения
+        handleGetAllFavourites();
+        setFavourites((prevFavourites) => {
+          const updatedFavourites = [...prevFavourites];
+          updatedFavourites[index] = {
+            ...updatedFavourites[index],
+            isEditing: false,
+          };
+          return updatedFavourites;
+        });
+      })
+      .catch(error => {
+        console.error(error);
+      });
+  };
+
+  //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+  const handleLogin = async (res) => {
+    console.log("LOGIN SUCCESS! Current user:", res.profileObj);
+
+    const response = await fetch(`${serverBaseURL}/google/login`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(res.profileObj),
+    });
+
+    if (response.ok) {
+      const data = await response.json();
+      console.log("Token:", data.access_token);
+      // Установите полученный токен в состояние userTokenData в app.js
+      setUserTokenData(data.access_token);
+      setIsLoggedIn(true);
+    } else {
+      console.error("Failed to login:", response.status);
+    }
+  };
+
+  const handleLogout = () => {
+    console.log("Logout");
+    setIsLoggedIn(false);
+    setUserTokenData();
+    // Дополнительные действия при выходе из системы
+  };
+
+  const handleFailure = (error) => {
+    console.log("LOGIN FAILED! Error:", error);
+  };
 
 
   return (
@@ -355,6 +556,41 @@ const App = () => {
           {sharedLink}
         </a>
       )}
+    <div>
+      {isLoggedIn ? (
+        <div id="signOutButton">
+          <GoogleLogout
+            clientId={clientId}
+            buttonText={"logout"}
+            onLogoutSuccess={handleLogout}
+          />
+        </div>
+      ) : (
+        <div id="signInButton">
+          <GoogleLogin
+            clientId={clientId}
+            buttonText="login"
+            onSuccess={handleLogin}
+            onFailure={handleFailure}
+            cookiePolicy={'single_host_origin'}
+            isSignedIn={true}
+          />
+        </div>
+      )}
+    </div>
+    <button
+      onClick={handleCreateFavourites}
+      style={{
+        textAlign: 'center',
+        width: '100px',
+        border: '1px solid gray',
+        borderRadius: '5px',
+        backgroundColor: isLoggedIn ? '#DDDDDD' : '#AAAAAA',
+      }}
+      disabled={!isLoggedIn}
+    >
+      Add favourites
+    </button>
   </Grid>
   <Grid item xs={6}>
     <Box sx={{ width: '100%', typography: 'body1' }}>
@@ -363,6 +599,7 @@ const App = () => {
           <TabList onChange={handleChange} aria-label="lab API tabs example">
             <Tab label="Json Form" value="1" />
             <Tab label="Logs" value="2" />
+            <Tab label="Favourites" value="3" />
           </TabList>
         </Box>
         <TabPanel value="1">
@@ -378,6 +615,75 @@ const App = () => {
           {seeData.map((line, index) => (
             <div key={index}>{line}</div>
           ))}
+        </TabPanel>
+        <TabPanel value="3">
+          {isLoggedIn ? (
+            favourites.map((favourite, index) => (
+              <div key={index}>
+                <button
+                  style={{
+                    textAlign: 'center',
+                    width: '100px',
+                    border: '1px solid gray',
+                    borderRadius: '5px',
+                    backgroundColor: '#DDDDDD',
+                  }}
+                  onClick={() => {
+                  handleGetOneFavourites(favourite.name_config)
+                  handleToggleAllEdit()
+                  }}
+                >
+                  {favourite.name_esphome}
+                </button>
+                {!favourite.isEditing && (
+                  <button
+                    style={{
+                      textAlign: 'center',
+                      width: '100px',
+                      border: '1px solid gray',
+                      borderRadius: '5px',
+                      backgroundColor: '#DDDDDD',
+                    }}
+                    onClick={() => {
+                    handleGetOneFavourites(favourite.name_config);
+                    handleToggleEdit(index)
+                    }}
+                  >
+                    Edit
+                  </button>
+                )}
+                {favourite.isEditing && (
+                  <button
+                    style={{
+                      textAlign: 'center',
+                      width: '100px',
+                      border: '1px solid gray',
+                      borderRadius: '5px',
+                      backgroundColor: '#00FF00',
+                      color: 'white',
+                    }}
+                    onClick={() => handleSaveFavourite(index, favourite.name_config)}
+                  >
+                    Save
+                  </button>
+                )}
+                <button
+                  style={{
+                    textAlign: 'center',
+                    width: '100px',
+                    border: '1px solid gray',
+                    borderRadius: '5px',
+                    backgroundColor: '#DDDDDD',
+                  }}
+                  onClick={() => handleDeleteFavourite(favourite.name_config)}
+                >
+                  Delete
+                </button>
+              </div>
+            ))
+          ) : (
+            <div>In order to access your saved config, you need to login</div>
+          )}
         </TabPanel>
       </TabContext>
     </Box>
