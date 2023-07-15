@@ -199,7 +199,7 @@ const App = () => {
 
   const handleTextAreaChange = (event) => {
     const value = event.target.value;
-    const replacedValue = value.replace(/[\u00A0]/g, ' '); // Замена неразрывных пробелов на обычные пробелы
+    const replacedValue = value.replace(/[\u00A0]/g, ' '); // Replacing non-breaking spaces with regular spaces
     setTextAreaValue(replacedValue);
 
     try {
