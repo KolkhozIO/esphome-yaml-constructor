@@ -199,16 +199,17 @@ const App = () => {
 
   const handleTextAreaChange = (event) => {
     const value = event.target.value;
-    setTextAreaValue(value);
+    const replacedValue = value.replace(/[\u00A0]/g, ' '); // Replacing non-breaking spaces with regular spaces
+    setTextAreaValue(replacedValue);
 
     try {
-      const parsedData = YAML.parse(value);
+      const parsedData = YAML.parse(replacedValue);
       setFormData(parsedData);
     } catch (error) {
       console.error('Error parsing YAML', error);
       // Handle parse error, e.g. show error message to user.
     }
-  }
+  };
 
 //---------------------------------------------------------
 
