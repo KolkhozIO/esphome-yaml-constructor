@@ -5,6 +5,7 @@ COPY ./requirements.txt ./requirements.txt
 RUN pip3 install -r requirements.txt
 
 COPY ./compile_files ./compile_files
+COPY ./compile_files_ota ./compile_files_ota
 COPY ./db ./db
 COPY ./lib ./lib
 COPY ./tests ./tests

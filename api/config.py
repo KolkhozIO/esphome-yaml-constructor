@@ -106,3 +106,28 @@ async def download_bin(
                                 media_type="application/octet-stream")
         response.headers["Access-Control-Expose-Headers"] = "Content-Disposition"
         return response
+
+
+@config_router.post("/download/ota", status_code=status.HTTP_200_OK)
+async def download_ota(
+        request: Request, db: AsyncSession = Depends(get_db)
+):
+    # get information about the file, delete the yaml file, return the binary to the user
+    file_name = (await request.body()).decode('utf-8')
+    if not file_name:
+        return JSONResponse(
+            status_code=status.HTTP_404_NOT_FOUND,
+            content={
+                'message': 'The configuration was not compiled'
+            }
+        )
+    else:
+        info_config = await _execute_function(ConfigDAL,
+                                              ConfigDAL.get_config,
+                                              session=db,
+                                              name_config=file_name)
+        response = FileResponse(f"compile_files_ota/{file_name}.bin",
+                                filename=f"{info_config.name_esphome}.bin",
+                                media_type="application/octet-stream")
+        response.headers["Access-Control-Expose-Headers"] = "Content-Disposition"
+        return response

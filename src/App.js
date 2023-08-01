@@ -178,6 +178,41 @@ const App = () => {
       });
   };
 
+
+  //  Post request compile function that downloads a file ota
+  const handleDownloadOta = () => {
+    fetch(`${serverBaseURL}/download/ota`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: file_name
+    })
+      .then(response => {
+        if (response.status === 404) {
+          console.log('The configuration was not compiled');
+          throw new Error('The configuration was not compiled');
+        }
+        return response.blob().then(blob => ({ blob, response }));
+      })
+      .then(({ blob, response }) => {
+        // Saving the binary file as an object URL
+        const url = URL.createObjectURL(blob);
+
+        const contentDisposition = response.headers.get('content-disposition');
+        const [, filename] = contentDisposition.match(/filename="(.+?)"/i) || [];
+
+        // Create a link to download the file
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = filename || 'file.bin';
+
+        // Programmatically click on the link to start the download
+        link.click();
+      })
+      .catch(error => {
+        console.error('Error:', error);
+      });
+  };
+
 //---------------------------------------------------------
 //  To switch between JSON Form and Logs
 
@@ -510,6 +545,19 @@ const App = () => {
         disabled={isDownloadDisabled}
     >
       Download BIN
+    </button>
+    <button
+        onClick={handleDownloadOta}
+        style={{
+          textAlign: 'center',
+          width: '100px',
+          border: '1px solid gray',
+          borderRadius: '5px',
+          backgroundColor: downloadButtonColor,
+        }}
+        disabled={isDownloadDisabled}
+    >
+      Download BIN Ota
     </button>
     <esp-web-install-button manifest={`${serverBaseURL}/manifest/${file_name}`}>
       <button

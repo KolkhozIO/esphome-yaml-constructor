@@ -4,6 +4,7 @@ env = Env()
 
 UPLOADED_FILES_PATH = "./uploaded_files/"
 COMPILE_DIR = "./compile_files/"
+COMPILE_DIR_OTA = "./compile_files_ota/"
 COMPILE_CMD = "esphome compile"
 
 SECRET_KEY: str = env.str("SECRET_KEY", default="secret_key")
