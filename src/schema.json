@@ -284,39 +284,31 @@
       }
     },
     "modbus_controller": {
-      "type": "array",
-      "title": "modbus_controller",
-      "items": {
-        "anyOf": [
-          {
-            "type": "object",
-            "title": "modbus_controller schema",
-            "required": [
-              "id",
-              "address",
-              "modbus_id",
-              "setup_priority"
-            ],
-            "properties": {
-              "id": {
-                "type": "string",
-                "default": "epever",
-                "title": "id"
-              },
-              "address": {
-                "$ref": "#/definitions/properties/address"
-              },
-              "modbus_id": {
-                "type": "string",
-                "title": "modbus_id"
-              },
-              "setup_priority": {
-                "type": "integer",
-                "title": "setup_priority"
-              }
-            }
-          }
-        ]
+      "type": "object",
+      "title": "modbus_controller schema",
+      "required": [
+        "id",
+        "address",
+        "modbus_id",
+        "setup_priority"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "title": "id"
+        },
+        "address": {
+          "type": "string",
+          "title": "address"
+        },
+        "modbus_id": {
+          "type": "string",
+          "title": "modbus_id"
+        },
+        "setup_priority": {
+          "type": "integer",
+          "title": "setup_priority"
+        }
       }
     },
     "sensor": {
