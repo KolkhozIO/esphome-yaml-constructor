@@ -16,8 +16,11 @@ COPY ./hashing.py ./hashing.py
 COPY ./api ./api
 COPY ./migrations ./migrations
 COPY ./alembic.ini ./alembic.ini
+COPY ./pytest.ini ./pytest.ini
 
 EXPOSE 8000
 
+#RUN pytest
+
 #CMD ["uvicorn", "main:app", "--reload" , "--host" , "0.0.0.0"]
-CMD ["bash", "-c", "alembic upgrade head && uvicorn main:app --reload --host 0.0.0.0"]
+CMD ["bash", "-c", "alembic upgrade head && pytest && uvicorn main:app --reload --host 0.0.0.0"]

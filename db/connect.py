@@ -17,7 +17,7 @@ SQLALCHEMY_DATABASE_POSTGRES_URL = (
     f"{DB_DRIVER}+{DB_COMMUNICATION_DRIVER}://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
 )
 
-engine = create_async_engine(SQLALCHEMY_DATABASE_POSTGRES_URL, future=True, echo=True)
+engine = create_async_engine("postgresql+asyncpg://kolkhoz:kolkhoz@db:5432/kolkhoz", future=True, echo=True)
 
 async_session = sessionmaker(engine, expire_on_commit=False, class_=AsyncSession)
 

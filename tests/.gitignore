@@ -1,3 +1,12 @@
 *
 !testone.yaml
 !test_compil.py
+!migrations
+!alembic.ini
+!conftest.py
+!manifest.json
+!test_config_router.py
+!test_favourites_router.py
+!test_flash_router.py
+!test_googleauth_router.py
+!test_share_router.py

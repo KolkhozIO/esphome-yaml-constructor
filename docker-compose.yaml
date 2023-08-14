@@ -1,23 +1,13 @@
 version: '2'
 services:
-  frontend:
-    build:
-      context: .
-      dockerfile: Dockerfile-frontend
-    env_file:
-      - .env
-    environment:
-      - NODE_ENV=production
-    ports:
-      - "3000:3000"
-    volumes:
-      - ../frontend:/app/build
-    networks:
-      - my_network
 
   backend:
     depends_on:
       - db
+      - test-db
+    links:
+      - db:db
+      - test-db:test-db
     build:
       context: .
       dockerfile: Dockerfile-backend
@@ -40,6 +30,19 @@ services:
       - "5432:5432"
     networks:
       - my_network
+
+  test-db:
+    container_name: "test-db"
+    image: postgres:15-alpine
+    restart: always
+    environment:
+      - POSTGRES_USER=testkolkhoz
+      - POSTGRES_PASSWORD=testkolkhoz
+      - POSTGRES_DB=testkolkhoz
+    networks:
+      - my_network
+    ports:
+      - "5433:5432"
 
 networks:
   my_network:

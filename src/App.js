@@ -52,7 +52,15 @@ const App = () => {
       headers: { 'Content-Type': 'application/json' },
       body: yaml_text
     })
-      .then(response => response.json())
+      .then(response => {
+        if (!response.ok) {
+          return response.json().then(errorData => {
+            console.log(`${errorData.detail}`)
+            setSseData(prevData => [...prevData, errorData.detail]);
+          });
+        }
+        return response.json();
+      })
       .then(data => {
         // Update the state with the retrieved data
         console.log(data.name_config)
@@ -77,41 +85,44 @@ const App = () => {
       headers: { 'Content-Type': 'application/json' },
       body: file_name,
     })
-        .then((response) => {
-          const reader = response.body.getReader();
-          let partial = '';
-          return reader.read().then(function processResult(result) {
-            const text = partial + new TextDecoder().decode(result.value || new Uint8Array(), {
-              stream: !result.done,
-            });
-            const lines = text.split(/\r?\n/);
-            partial = lines.pop() || '';
-            console.log(lines.join('\n')); // console logs
-            setSseData((prevData) => [...prevData, ...lines]);
-            if (result.done) {
-              setCompileComplete(true);
-              setIsDownloadDisabled(false);
-              setIsFlashDisabled(false);
-              setDownloadButtonColor('#DDDDDD');
-              setFlashButtonColor('#DDDDDD');
-              setIsCompileDisabled(false);
-              setIsValidateDisabled(false); // Enable the Validate button
-              setValidateButtonColor('#DDDDDD'); // Set the Validate button color to its original color
-              return;
-            }
-            return reader.read().then(processResult);
+      .then((response) => {
+        if (!response.ok) {
+          return response.json().then(errorData => {
+            console.log(`${errorData.message}`);
+            setSseData(prevData => [...prevData, errorData.message]);
+            setIsValidateDisabled(false);
+            setIsCompileDisabled(false);
+            setIsDownloadDisabled(true); // Disable the Download button
+            setIsFlashDisabled(true); // Disable the Flash button
+            setDownloadButtonColor('#AAAAAA');
+            setFlashButtonColor('#AAAAAA');
+            setValidateButtonColor('#DDDDDD'); // Disable the Validate button
           });
-        })
-        .catch((error) => {
-          console.error(error);
-          setIsValidateDisabled(false);
-          setIsCompileDisabled(false);
-          setIsDownloadDisabled(false); // Enable the Download button if an error occurs
-          setIsFlashDisabled(false); // Enable the Flash button if an error occurs
-          setDownloadButtonColor('#DDDDDD');
-          setFlashButtonColor('#DDDDDD');
-          setValidateButtonColor('#DDDDDD'); // Set the Validate button color to its original color
+        }
+        const reader = response.body.getReader();
+        let partial = '';
+        return reader.read().then(function processResult(result) {
+          const text = partial + new TextDecoder().decode(result.value || new Uint8Array(), {
+            stream: !result.done,
+          });
+          const lines = text.split(/\r?\n/);
+          partial = lines.pop() || '';
+          console.log(lines.join('\n')); // console logs
+          setSseData((prevData) => [...prevData, ...lines]);
+          if (result.done) {
+            setCompileComplete(true);
+            setIsDownloadDisabled(false);
+            setIsFlashDisabled(false);
+            setDownloadButtonColor('#DDDDDD');
+            setFlashButtonColor('#DDDDDD');
+            setIsCompileDisabled(false);
+            setIsValidateDisabled(false); // Enable the Validate button
+            setValidateButtonColor('#DDDDDD'); // Set the Validate button color to its original color
+            return;
+          }
+          return reader.read().then(processResult);
         });
+      })
   };
 
   function getLogsValidate() {
@@ -145,15 +156,18 @@ const App = () => {
 
   //  Post request compile function that downloads a file
   const handleDownload = () => {
+    setSseData([]);
     fetch(`${serverBaseURL}/download`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: file_name
     })
       .then(response => {
-        if (response.status === 404) {
-          console.log('The configuration was not compiled')
-          throw new Error('The configuration was not compiled')
+        if (!response.ok) {
+          return response.json().then(errorData => {
+            console.log(`${errorData.message}`)
+            setSseData(prevData => [...prevData, errorData.message]);
+          });
         }
         return response.blob()
       })
@@ -168,6 +182,9 @@ const App = () => {
 
         // Programmatically click on the link to start the download
         link.click();
+      })
+      .catch(error => {
+        console.error(error);
       });
   }
 
@@ -226,7 +243,15 @@ const App = () => {
       headers: { 'Content-Type': 'application/json' },
       body: json_text
     })
-    .then(response => response.json())
+    .then(response => {
+      if (!response.ok) {
+        return response.json().then(errorData => {
+          console.log(`${errorData.message}`)
+          setSseData(prevData => [...prevData, errorData.message]);
+        });
+      }
+      return response.json();
+    })
     .then(data => {
       // Save the shared link and update state
       setSharedLink(data.url);
@@ -240,7 +265,14 @@ const App = () => {
     fetch(`${serverBaseURL}/share?file_name=${uuid}`, {
       method: 'GET'
     })
-    .then(response => response.json())
+    .then(response => {
+      if (!response.ok) {
+        return response.json().then(errorData => {
+          console.log(`${errorData.message}`)
+        });
+      }
+      return response.json();
+    })
     .then(data => {
       // Update the state with the retrieved data
       console.log(data.json_text)
@@ -282,7 +314,16 @@ const App = () => {
       },
       body: json_text
     })
-      .then(response => response.json())
+      .then(response => {
+        if (!response.ok) {
+          setSseData([]);
+          return response.json().then(errorData => {
+            console.log(`${errorData.message}`)
+            setSseData(prevData => [...prevData, errorData.message]);
+          });
+        }
+        return response.json();
+      })
       .then(data => {
         // Handle the response data as needed
         console.log(data);
@@ -304,7 +345,16 @@ const App = () => {
         'Authorization': `Bearer ${userToken}`
       }
     })
-      .then(response => response.json())
+      .then(response => {
+        if (!response.ok) {
+          setSseData([]);
+          return response.json().then(errorData => {
+            console.log(`${errorData.message}`)
+            setSseData(prevData => [...prevData, errorData.message]);
+          });
+        }
+        return response.json();
+      })
       .then(data => {
         // Handle the response data as needed
         console.log(data);
@@ -335,7 +385,16 @@ const App = () => {
         'Authorization': `Bearer ${userToken}`
       }
     })
-      .then(response => response.json())
+      .then(response => {
+        if (!response.ok) {
+          setSseData([]);
+          return response.json().then(errorData => {
+            console.log(`${errorData.message}`)
+            setSseData(prevData => [...prevData, errorData.message]);
+          });
+        }
+        return response.json();
+      })
       .then(data => {
         console.log(data);
         setFormData(data.json_text);
@@ -354,7 +413,15 @@ const App = () => {
         'Authorization': `Bearer ${userToken}`
       }
     })
-      .then(response => response.json())
+      .then(response => {
+        if (!response.ok) {
+          return response.json().then(errorData => {
+            console.log(`${errorData.message}`)
+            setSseData(prevData => [...prevData, errorData.message]);
+          });
+        }
+        return response.json();
+      })
       .then(data => {
         console.log('Favourite deleted:', data);
         // Обновите список избранных после успешного удаления
@@ -383,7 +450,15 @@ const App = () => {
       },
       body: JSON.stringify(formData)
     })
-      .then(response => response.json())
+      .then(response => {
+        if (!response.ok) {
+          return response.json().then(errorData => {
+            console.log(`${errorData.message}`)
+            setSseData(prevData => [...prevData, errorData.message]);
+          });
+        }
+        return response.json();
+      })
       .then(data => {
         console.log('Favourite saved:', data);
         // Обновите список избранных после успешного сохранения
@@ -403,6 +478,7 @@ const App = () => {
 
   const handleLogin = async (res) => {
     console.log("LOGIN SUCCESS! Current user:", res.profileObj);
+    setSseData([]);
 
     const response = await fetch(`${serverBaseURL}/google/login`, {
       method: 'POST',
@@ -410,17 +486,26 @@ const App = () => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify(res.profileObj),
-    });
-
-    if (response.ok) {
-      const data = await response.json();
+    })
+    .then(response => {
+      if (!response.ok) {
+        return response.json().then(errorData => {
+          console.log(`${errorData.message}`)
+          setSseData(prevData => [...prevData, errorData.message]);
+        });
+      } else {
+        return response.json(); // Return the JSON response here
+      }
+    })
+    .then(data => { // Now you have access to the data returned by the server
       console.log("Token:", data.access_token);
-      // Установите полученный токен в состояние userTokenData в app.js
+      // Set the obtained token in the userTokenData state in app.js
       setUserTokenData(data.access_token);
       setIsLoggedIn(true);
-    } else {
-      console.error("Failed to login:", response.status);
-    }
+    })
+    .catch(error => {
+      console.error("Error during login:", error);
+    });
   };
 
   const handleLogout = () => {
