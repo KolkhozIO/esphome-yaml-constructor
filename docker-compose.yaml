@@ -1,5 +1,19 @@
 version: '2'
 services:
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile-frontend
+    env_file:
+      - .env
+    environment:
+      - NODE_ENV=production
+    ports:
+      - "3000:3000"
+    volumes:
+      - ../frontend:/app/build
+    networks:
+      - my_network
 
   backend:
     depends_on:

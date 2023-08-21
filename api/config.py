@@ -77,7 +77,7 @@ async def compile_file(request: Request, db: AsyncSession = Depends(get_db),
     elif info_config is None:
         return JSONResponse(
             status_code=404,
-            content={"message": f"Config not save!"},
+            content={"message": f"Config not save"},
         )
 
     cmd = f"{COMPILE_CMD} {UPLOADED_FILES_PATH}{file_name}.yaml"

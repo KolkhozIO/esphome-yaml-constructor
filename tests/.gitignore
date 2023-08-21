@@ -10,3 +10,7 @@
 !test_flash_router.py
 !test_googleauth_router.py
 !test_share_router.py
+!uploaded_files
+!compile_files
+!settings.py
+!settings_tests.py

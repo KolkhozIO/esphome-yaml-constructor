@@ -1,23 +1,27 @@
+import hashlib
 import os
 import sys
 import uuid
+from datetime import timedelta
 from typing import Generator, Any
 
 import pytest
+import yaml
+from jose import jwt
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 from sqlalchemy.orm import sessionmaker
 from starlette.testclient import TestClient
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+import settings
+from lib.login import create_access_token
+
 from db.connect import get_db
 from main import app
 import asyncio
 import asyncpg
 
-TEST_DATABASE_URL = (
-    "postgresql+asyncpg://testkolkhoz:testkolkhoz@test-db:5432/testkolkhoz"
-)
 
 CLEAN_TABLES = [
     "config",
@@ -25,6 +29,7 @@ CLEAN_TABLES = [
     "user_config"
 ]
 
+TEST_DATABASE_URL = os.environ.get("TEST_DATABASE_URL")
 
 @pytest.fixture(scope="session")
 def event_loop():
@@ -238,3 +243,37 @@ async def create_test_config(asyncpg_pool):
             return await connection.fetch("SELECT * FROM config WHERE config_json = $1;", config_json)
 
     return create_test_config
+
+
+def get_file_name(data_from_resp):
+    start_text = "./uploaded_files/"
+    end_text = ".yaml"
+
+    start_index = data_from_resp.find(start_text) + len(start_text)
+    end_index = data_from_resp.find(end_text, start_index)
+
+    extracted_content = data_from_resp[start_index:end_index]
+    return extracted_content
+
+
+def get_hash_config(config_data):
+    yaml_text = yaml.dump(config_data)
+    m = hashlib.md5()
+    m.update(yaml_text.encode('utf-8'))
+    return m.hexdigest()
+
+
+async def create_test_token(email):
+    access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
+    return create_access_token(
+        data={"sub": email},
+        expires_delta=access_token_expires,
+    )
+
+
+async def decode_test_token(access_token):
+    payload = jwt.decode(
+        access_token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM]
+    )
+    email: str = payload.get("sub")
+    return email

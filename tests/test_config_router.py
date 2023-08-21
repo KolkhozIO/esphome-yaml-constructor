@@ -1,104 +1,13 @@
-import hashlib
 import json
 import os
 from uuid import UUID, uuid4
 
-import yaml
-
 from settings import UPLOADED_FILES_PATH, COMPILE_DIR
-
-config_data = {
-    'esphome': {
-        'name': 'edfhgkd'
-    },
-    'esp32': {
-        'board': 'esp32doit-devkit-v1',
-        'framework': {
-            'type': 'arduino'
-        }
-    },
-    'api': {
-        'password': 'password'
-    },
-    'ota': {
-        'password': 'password'
-    },
-    'wifi': {
-        'password': 'password',
-        'ap': {
-            'password': 'password',
-            'ssid': 'sdfg'
-        },
-        'ssid': '23dc'
-    },
-    'logger': {
-        'level': 'debug',
-        'baud_rate': 1024
-    },
-    'i2c': {
-        'sda': 21,
-        'scl': 22,
-        'scan': True
-    }
-}
-
-
-config_failed_data = {
-    'esphome': {
-        'name': ''
-    },
-    'esp32': {
-        'board': 'esp32doit-devkit-v1',
-        'framework': {
-            'type': 'arduino'
-        }
-    },
-    'api': {
-        'password': ''
-    },
-    'ota': {
-        'password': ''
-    },
-    'wifi': {
-        'password': '',
-        'ap': {
-            'password': '',
-            'ssid': ''
-        },
-        'ssid': ''
-    },
-    'logger': {
-        'level': 'debug'
-    },
-    'i2c': {
-        'sda': 21,
-        'scl': 22,
-        'scan': True
-    }
-}
-
-
-def get_file_name(data_from_resp):
-    start_text = "./uploaded_files/"
-    end_text = ".yaml"
-
-    start_index = data_from_resp.find(start_text) + len(start_text)
-    end_index = data_from_resp.find(end_text, start_index)
-
-    extracted_content = data_from_resp[start_index:end_index]
-    return extracted_content
-
-
-def get_hash_config(config_data):
-    yaml_text = yaml.dump(config_data)
-    m = hashlib.md5()
-    m.update(yaml_text.encode('utf-8'))
-    return m.hexdigest()
+from tests.conftest import get_file_name, get_hash_config
+from tests.settings_tests import config_data, config_failed_data
 
 
 async def test_validate_endpoint(client):
-    global config_data
-
     resp = client.post("/validate", data=json.dumps(config_data))
     data_from_resp = resp.text
 
@@ -111,8 +20,6 @@ async def test_validate_endpoint(client):
 
 
 async def test_failed_validate_endpoint(client):
-    global config_data
-
     resp = client.post("/validate", data=json.dumps(None))
     data_from_resp = resp.text
 
@@ -125,8 +32,6 @@ async def test_failed_validate_endpoint(client):
 
 
 async def test_save_config_endpoint(client, get_config_from_database):
-    global config_data
-
     resp = client.post("/save_config", data=json.dumps(config_data))
     data_from_resp = resp.json()
     config_from_db = await get_config_from_database(data_from_resp["name_config"])
@@ -144,10 +49,7 @@ async def test_save_config_endpoint(client, get_config_from_database):
     assert not os.path.exists(f'{UPLOADED_FILES_PATH}{data_from_resp["name_config"]}.yaml')
 
 
-async def test_save_config_if_compile_false(client, get_config_from_database, get_config_by_config_json,
-                                            create_config_in_database):
-    global config_data
-
+async def test_save_config_if_compile_false(client, create_config_in_database, get_config_by_config_json, get_config_from_database):
     create_config_data = {
         "name_config": uuid4(),
         "hash_yaml": "205d5758d4cc066603a617faf6ad7c29",
@@ -185,8 +87,6 @@ async def test_save_config_if_compile_false(client, get_config_from_database, ge
 
 async def test_save_config_if_compile_true(client, get_config_from_database, get_config_by_config_json,
                                            create_config_in_database):
-    global config_data
-
     create_config_data = {
         "name_config": uuid4(),
         "hash_yaml": "205d5758d4cc066603a617faf6ad7c29",
@@ -222,9 +122,7 @@ async def test_save_config_if_compile_true(client, get_config_from_database, get
     assert not os.path.exists(f'{UPLOADED_FILES_PATH}{data_from_resp["name_config"]}.yaml')
 
 
-async def test_failed_save_config_endpoint(client, get_config_from_database):
-    global config_data
-
+async def test_failed_save_config_endpoint(client):
     resp = client.post("/save_config", data=json.dumps(None))
     data_from_resp = resp.json()
 
@@ -232,9 +130,7 @@ async def test_failed_save_config_endpoint(client, get_config_from_database):
     assert data_from_resp['detail'] == 'Item not found'
 
 
-async def test_compile_endpoint(client, get_config_from_database, get_config_by_config_json, create_config_in_database):
-    global config_data
-
+async def test_compile_endpoint(client, get_config_from_database):
     resp = client.post("/save_config", data=json.dumps(config_data))
     data_from_resp = resp.json()
     name_config = data_from_resp["name_config"]
@@ -258,9 +154,7 @@ async def test_compile_endpoint(client, get_config_from_database, get_config_by_
     os.remove(f'{COMPILE_DIR}{str(config_from_db["name_config"])}.bin')
 
 
-async def test_compile_endpoint_two(client, get_config_from_database, get_config_by_config_json, create_config_in_database):
-    global config_data
-
+async def test_compile_endpoint_two(client, get_config_from_database):
     resp = client.post("/save_config", data=json.dumps(config_failed_data))
     data_from_resp = resp.json()
     name_config = data_from_resp["name_config"]
@@ -284,9 +178,7 @@ async def test_compile_endpoint_two(client, get_config_from_database, get_config
     os.remove(f'{UPLOADED_FILES_PATH}{str(config_from_db["name_config"])}.yaml')
 
 
-async def test_failed_compile_endpoint_two(client, get_config_from_database, get_config_by_config_json, create_config_in_database):
-    global config_data
-
+async def test_failed_compile_endpoint_two(client, get_config_from_database):
     resp = client.post("/save_config", data=json.dumps(config_data))
     data_from_resp = resp.json()
     name_config = data_from_resp["name_config"]
@@ -304,71 +196,48 @@ async def test_failed_compile_endpoint_two(client, get_config_from_database, get
     assert resp.headers == [(b'content-length', b'29'), (b'content-type', b'application/json')]
 
 
-async def test_failed_compile_endpoint(client, get_config_from_database, get_config_by_config_json, create_config_in_database):
-    global config_data
-
+async def test_failed_compile_endpoint(client, get_config_from_database):
     resp = client.post("/compile", data=None)
     config_from_db = await get_config_from_database(None)
     data_from_resp = resp.json()
-    assert resp.status_code == 404
+    assert resp.status_code == 400
     assert data_from_resp['message'] == 'Config not save'
     assert config_from_db == []
     assert resp.headers == [(b'content-length', b'29'), (b'content-type', b'application/json')]
 
 
-async def test_download_endpoint(client, get_config_from_database, get_config_by_config_json,
-                                 create_config_in_database):
-    global config_data
-
+async def test_download_endpoint(client):
     resp = client.post("/download", data="dbe414e8-cca0-4f18-b041-7d0e44145794")
-
-    # Проверить код состояния ответа
     assert resp.status_code == 200
-
-    # Проверить MIME-тип файла
     assert resp.headers["Content-Type"] == "application/octet-stream"
 
-    # Проверить имя файла
     expected_filename = "dbe414e8-cca0-4f18-b041-7d0e44145794.bin"
     assert resp.headers["Content-Disposition"] == f'attachment; filename="{expected_filename}"'
 
-    # Проверить содержимое файла
     with open(f"{COMPILE_DIR}dbe414e8-cca0-4f18-b041-7d0e44145794.bin", "rb") as file:
         file_content = file.read()
     assert resp.content == file_content
 
 
-async def test_failed_download_endpoint(client, get_config_from_database, get_config_by_config_json,
-                                 create_config_in_database):
-    global config_data
-
+async def test_failed_download_endpoint(client):
     resp = client.post("/download", data=None)
 
-    # Проверить код состояния ответа
     assert resp.status_code == 404
     assert resp.content == b'{"message":"The configuration was not compiled"}'
     assert resp.headers == [(b'content-length', b'48'), (b'content-type', b'application/json')]
 
 
-async def test_failed_download_endpoint_two(client, get_config_from_database, get_config_by_config_json,
-                                 create_config_in_database):
-    global config_data
-
+async def test_failed_download_endpoint_two(client):
     resp = client.post("/download", data="")
 
-    # Проверить код состояния ответа
     assert resp.status_code == 404
     assert resp.content == b'{"message":"The configuration was not compiled"}'
     assert resp.headers == [(b'content-length', b'48'), (b'content-type', b'application/json')]
 
 
-async def test_failed_download_endpoint_three(client, get_config_from_database, get_config_by_config_json,
-                                 create_config_in_database):
-    global config_data
-
+async def test_failed_download_endpoint_three(client):
     resp = client.post("/download", data="6be414e8-cca0-4f18-b041-7d0e44145794")
 
-    # Проверить код состояния ответа
     assert resp.status_code == 404
     assert resp.content == b'{"message":"The configuration was not compiled"}'
     assert resp.headers == [(b'content-length', b'48'), (b'content-type', b'application/json')]
