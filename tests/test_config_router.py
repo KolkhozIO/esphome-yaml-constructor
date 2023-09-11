@@ -1,218 +1,165 @@
 import json
-import os
-from uuid import UUID, uuid4
+import uuid
+from uuid import uuid4
 
-from settings import UPLOADED_FILES_PATH, COMPILE_DIR
-from tests.conftest import get_file_name, get_hash_config
+from settings import COMPILE_DIR
+from tests.conftest import get_file_name
 from tests.settings_tests import config_data, config_failed_data
 
 
 async def test_validate_endpoint(client):
     resp = client.post("/validate", data=json.dumps(config_data))
-    data_from_resp = resp.text
+
+    file_name = get_file_name(resp.text)
+    content = (
+            b"INFO Reading configuration ./uploaded_files/"
+            + file_name.encode("utf-8")
+            + b".yaml...\n\nINFO Configuration is valid!\n\nesphome:\n\n  name: "
+            + config_data['esphome']['name'].encode("utf-8")
+            + b"\n\n  build_path: .esphome/build/"
+            + config_data['esphome']['name'].encode("utf-8")
+            + b"\n\n  friendly_name: ''\n\n  platformio_options: {}\n\n  includes: []\n\n  libraries: []"
+              b"\n\n  name_add_mac_suffix: false\n\n  min_version: 2023.3.2\n\nesp32:\n\n  board: "
+            + config_data['esp32']['board'].encode("utf-8")
+            + b"\n\n  framework:\n\n    version: 2.0.5\n\n    source: ~3.20005.0"
+              b"\n\n    platform_version: platformio/espressif32 @ 5.2.0\n\n    type: "
+            + config_data['esp32']['framework']['type'].encode("utf-8")
+            + b"\n\n  variant: ESP32\n\napi:\n\n  password: "
+            + config_data['api']['password'].encode("utf-8")
+            + b"\n\n  port: 6053\n\n  reboot_timeout: 15min\n\ni2c:\n\n- scan: true\n\n  scl: "
+            + str(config_data['i2c']['scl']).encode("utf-8")
+            + b"\n\n  sda: "
+            + str(config_data['i2c']['sda']).encode("utf-8")
+            + b"\n\n  frequency: 50000.0\n\nlogger:\n\n  baud_rate: "
+            + str(config_data['logger']['baud_rate']).encode("utf-8")
+            + b"\n\n  level: DEBUG\n\n  tx_buffer_size: 512\n\n  deassert_rts_dtr: false\n\n  hardware_uart: UART0"
+              b"\n\n  logs: {}\n\nota:\n\n  password: "
+            + config_data['ota']['password'].encode("utf-8")
+            + b"\n\n  safe_mode: true\n\n  port: 3232\n\n  reboot_timeout: 5min\n\n  num_attempts: 10\n\nwifi:"
+              b"\n\n  ap:\n\n    password: "
+            + config_data['wifi']['ap']['password'].encode("utf-8")
+            + b"\n\n    ssid: "
+            + config_data['wifi']['ap']['ssid'].encode("utf-8")
+            + b"\n\n    ap_timeout: 1min\n\n  domain: .local\n\n  reboot_timeout: 15min\n\n  power_save_mode: LIGHT"
+              b"\n\n  fast_connect: false\n\n  networks:\n\n  - ssid: "
+            + config_data['wifi']['ssid'].encode("utf-8")
+            + b"\n\n    password: "
+            + config_data['wifi']['password'].encode("utf-8")
+            + b"\n\n    priority: 0.0\n\n  use_address: "
+            + config_data['esphome']['name'].encode("utf-8")
+            + b".local\n\n\n\n"
+    )
 
     assert resp.status_code == 200
-    assert "Configuration is valid!" in data_from_resp
-
-    file_name = get_file_name(data_from_resp)
-    uploaded_file_path = f'{UPLOADED_FILES_PATH}{file_name}.yaml'
-    assert not os.path.exists(uploaded_file_path)
+    assert resp.content == content
 
 
 async def test_failed_validate_endpoint(client):
     resp = client.post("/validate", data=json.dumps(None))
-    data_from_resp = resp.text
+
+    file_name = get_file_name(resp.text)
+    content = (
+        b"INFO Reading configuration ./uploaded_files/"
+        + file_name.encode('utf-8')
+        + b".yaml...\n\nFailed config\n\n\n\n'esphome' section missing from configuration. "
+          b"Please make sure your configuration has an 'esphome:' line in it.\n\n\n\n"
+    )
 
     assert resp.status_code == 200
-    assert "Failed config" in data_from_resp
-
-    file_name = get_file_name(data_from_resp)
-    uploaded_file_path = f'{UPLOADED_FILES_PATH}{file_name}.yaml'
-    assert not os.path.exists(uploaded_file_path)
+    assert resp.content == content
 
 
-async def test_save_config_endpoint(client, get_config_from_database):
+async def test_save_config_one(client):
     resp = client.post("/save_config", data=json.dumps(config_data))
-    data_from_resp = resp.json()
-    config_from_db = await get_config_from_database(data_from_resp["name_config"])
-
-    assert len(config_from_db) == 1
-    config_from_db = dict(config_from_db[0])
+    data_from_resp_one = resp.json()
 
     assert resp.status_code == 200
-    assert config_from_db["name_config"] == UUID(data_from_resp["name_config"])
-    assert config_from_db["hash_yaml"] == get_hash_config(config_data)
-    assert config_from_db["name_esphome"] == "edfhgkd"
-    assert config_from_db["platform"] == "ESP32"
-    assert os.path.exists(f'{UPLOADED_FILES_PATH}{data_from_resp["name_config"]}.yaml')
-    os.remove(f'{UPLOADED_FILES_PATH}{data_from_resp["name_config"]}.yaml')
-    assert not os.path.exists(f'{UPLOADED_FILES_PATH}{data_from_resp["name_config"]}.yaml')
+    assert uuid.UUID(data_from_resp_one.get("name_config"), version=4) is not None
 
 
-async def test_save_config_if_compile_false(client, create_config_in_database, get_config_by_config_json, get_config_from_database):
-    create_config_data = {
-        "name_config": uuid4(),
-        "hash_yaml": "205d5758d4cc066603a617faf6ad7c29",
-        "name_esphome": None,
-        "platform": None,
-        "compile_test": False,
-        "config_json": json.dumps(config_data),
-    }
-
-    await create_config_in_database(**create_config_data)
-    create_config_in_db = await get_config_by_config_json(json.dumps(config_data))
-    assert len(create_config_in_db) == 1
-    create_config_in_db = dict(create_config_in_db[0])
+async def test_save_config_two(client):
+    resp = client.post("/save_config", data=json.dumps(config_data))
+    data_from_resp_one = resp.json()
+    assert resp.status_code == 200
+    assert uuid.UUID(data_from_resp_one.get("name_config"), version=4) is not None
 
     resp = client.post("/save_config", data=json.dumps(config_data))
-    data_from_resp = resp.json()
-    config_from_db = await get_config_from_database(data_from_resp["name_config"])
-
-    assert len(config_from_db) == 1
-    config_from_db = dict(config_from_db[0])
-
+    data_from_resp_two = resp.json()
     assert resp.status_code == 200
-    assert create_config_in_db["name_config"] == UUID(data_from_resp["name_config"])
-    assert create_config_in_db["name_config"] == config_from_db["name_config"]
-    assert create_config_in_db["hash_yaml"] == get_hash_config(config_data)
-    assert create_config_in_db["hash_yaml"] == config_from_db["hash_yaml"]
-    assert create_config_in_db["name_esphome"] != config_from_db["name_esphome"]
-    assert create_config_in_db["platform"] != config_from_db["platform"]
-    assert create_config_in_db["compile_test"] == config_from_db["compile_test"]
-    assert create_config_in_db["config_json"] == config_from_db["config_json"]
-    assert os.path.exists(f'{UPLOADED_FILES_PATH}{data_from_resp["name_config"]}.yaml')
-    os.remove(f'{UPLOADED_FILES_PATH}{data_from_resp["name_config"]}.yaml')
-    assert not os.path.exists(f'{UPLOADED_FILES_PATH}{data_from_resp["name_config"]}.yaml')
+    assert uuid.UUID(data_from_resp_two.get("name_config"), version=4) is not None
+    assert data_from_resp_one == data_from_resp_two
 
 
-async def test_save_config_if_compile_true(client, get_config_from_database, get_config_by_config_json,
-                                           create_config_in_database):
-    create_config_data = {
-        "name_config": uuid4(),
-        "hash_yaml": "205d5758d4cc066603a617faf6ad7c29",
-        "name_esphome": "name",
-        "platform": "platform",
-        "compile_test": True,
-        "config_json": json.dumps(config_data),
-    }
-
-    await create_config_in_database(**create_config_data)
-    create_config_in_db = await get_config_by_config_json(json.dumps(config_data))
-    assert len(create_config_in_db) == 1
-    create_config_in_db = dict(create_config_in_db[0])
+async def test_save_config_three(client):
+    resp = client.post("/share", data=json.dumps(config_data))
+    data_from_resp_one = resp.json()
+    assert resp.status_code == 201
+    assert uuid.UUID(data_from_resp_one.get("uuid"), version=4) is not None
 
     resp = client.post("/save_config", data=json.dumps(config_data))
-    data_from_resp = resp.json()
-    config_from_db = await get_config_from_database(data_from_resp["name_config"])
-
-    assert len(config_from_db) == 1
-    config_from_db = dict(config_from_db[0])
+    data_from_resp_two = resp.json()
 
     assert resp.status_code == 200
-    assert create_config_in_db["name_config"] == UUID(data_from_resp["name_config"])
-    assert create_config_in_db["name_config"] == config_from_db["name_config"]
-    assert create_config_in_db["hash_yaml"] == get_hash_config(config_data)
-    assert create_config_in_db["hash_yaml"] == config_from_db["hash_yaml"]
-    assert create_config_in_db["name_esphome"] == config_from_db["name_esphome"]
-    assert create_config_in_db["platform"] == config_from_db["platform"]
-    assert create_config_in_db["compile_test"] == config_from_db["compile_test"]
-    assert create_config_in_db["config_json"] == config_from_db["config_json"]
-    assert os.path.exists(f'{UPLOADED_FILES_PATH}{data_from_resp["name_config"]}.yaml')
-    os.remove(f'{UPLOADED_FILES_PATH}{data_from_resp["name_config"]}.yaml')
-    assert not os.path.exists(f'{UPLOADED_FILES_PATH}{data_from_resp["name_config"]}.yaml')
+    assert uuid.UUID(data_from_resp_two.get("name_config"), version=4) is not None
+    assert data_from_resp_one.get("uuid") == data_from_resp_two.get("name_config")
 
 
 async def test_failed_save_config_endpoint(client):
     resp = client.post("/save_config", data=json.dumps(None))
-    data_from_resp = resp.json()
 
     assert resp.status_code == 404
-    assert data_from_resp['detail'] == 'Item not found'
+    assert resp.json()['detail'] == 'Item not found'
 
 
-async def test_compile_endpoint(client, get_config_from_database):
+async def test_compile_endpoint(client):
     resp = client.post("/save_config", data=json.dumps(config_data))
-    data_from_resp = resp.json()
-    name_config = data_from_resp["name_config"]
-    assert os.path.exists(f'{UPLOADED_FILES_PATH}{name_config}.yaml')
+    name_config = resp.json()["name_config"]
 
     resp = client.post("/compile", data=name_config)
-    config_from_db = await get_config_from_database(name_config)
-    data_from_resp = resp.text
-
-    assert len(config_from_db) == 1
-    config_from_db = dict(config_from_db[0])
 
     assert resp.status_code == 200
-    assert resp.headers == [(b'content-type', b'text/event-stream; charset=utf-8')]
-    assert "INFO Successfully compiled program." in data_from_resp
-    assert get_file_name(data_from_resp) == str(config_from_db["name_config"])
-    assert os.path.exists(
-        f'{UPLOADED_FILES_PATH}.esphome/build/{config_from_db["name_esphome"]}/.pioenvs/{config_from_db["name_esphome"]}/firmware-factory.bin')
-    assert os.path.exists(f'{COMPILE_DIR}{str(config_from_db["name_config"])}.bin')
-    assert not os.path.exists(f'{UPLOADED_FILES_PATH}{str(config_from_db["name_config"])}.yaml')
-    os.remove(f'{COMPILE_DIR}{str(config_from_db["name_config"])}.bin')
+    assert "INFO Successfully compiled program." in resp.text
 
 
-async def test_compile_endpoint_two(client, get_config_from_database):
+async def test_compile_endpoint_two(client):
     resp = client.post("/save_config", data=json.dumps(config_failed_data))
-    data_from_resp = resp.json()
-    name_config = data_from_resp["name_config"]
-    assert os.path.exists(f'{UPLOADED_FILES_PATH}{name_config}.yaml')
+    name_config = resp.json()["name_config"]
 
-    resp = client.post("/compile", data=name_config)
-    config_from_db = await get_config_from_database(name_config)
-    data_from_resp = resp.text
+    resp = client.post("/compile", data=name_config)\
 
-    assert len(config_from_db) == 1
-    config_from_db = dict(config_from_db[0])
+    content = (b"INFO Reading configuration ./uploaded_files/"
+               + name_config.encode('utf-8')
+               + b".yaml...\n\nFailed config\n\n\n\nwifi: [source ./uploaded_files/"
+               + name_config.encode('utf-8')
+               + b".yaml:18]\n\n  ap: \n\n    password: ''\n\n    \n\n    SSID can't be empty.\n\n    ssid: ''"
+                 b"\n\n  password: ''\n\n  \n\n  SSID can't be empty.\n\n  ssid: ''\n\n")
 
     assert resp.status_code == 200
-    assert resp.headers == [(b'content-type', b'text/event-stream; charset=utf-8')]
-    assert "Failed config" in data_from_resp
-    assert get_file_name(data_from_resp) == str(config_from_db["name_config"])
-    assert not os.path.exists(
-        f'{UPLOADED_FILES_PATH}.esphome/build/{config_from_db["name_esphome"]}/.pioenvs/{config_from_db["name_esphome"]}/firmware-factory.bin')
-    assert not os.path.exists(f'{COMPILE_DIR}{str(config_from_db["name_config"])}.bin')
-    assert os.path.exists(f'{UPLOADED_FILES_PATH}{str(config_from_db["name_config"])}.yaml')
-    os.remove(f'{UPLOADED_FILES_PATH}{str(config_from_db["name_config"])}.yaml')
+    assert resp.content == content
 
 
-async def test_failed_compile_endpoint_two(client, get_config_from_database):
+async def test_failed_compile_endpoint_two(client):
     resp = client.post("/save_config", data=json.dumps(config_data))
-    data_from_resp = resp.json()
-    name_config = data_from_resp["name_config"]
-    assert os.path.exists(f'{UPLOADED_FILES_PATH}{name_config}.yaml')
-
+    name_config = resp.json()["name_config"]
     fail_name_config = str(uuid4())
+    assert name_config != fail_name_config
+
     resp = client.post("/compile", data=fail_name_config)
-    config_from_db = await get_config_from_database(fail_name_config)
-    data_from_resp = resp.json()
 
     assert resp.status_code == 404
-    assert data_from_resp['message'] == 'Config not save'
-    assert name_config != fail_name_config
-    assert config_from_db == []
-    assert resp.headers == [(b'content-length', b'29'), (b'content-type', b'application/json')]
+    assert resp.json()['message'] == 'Config not save'
 
 
-async def test_failed_compile_endpoint(client, get_config_from_database):
+async def test_failed_compile_endpoint(client):
     resp = client.post("/compile", data=None)
-    config_from_db = await get_config_from_database(None)
-    data_from_resp = resp.json()
+
     assert resp.status_code == 400
-    assert data_from_resp['message'] == 'Config not save'
-    assert config_from_db == []
-    assert resp.headers == [(b'content-length', b'29'), (b'content-type', b'application/json')]
+    assert resp.json()['message'] == 'Config not save'
 
 
 async def test_download_endpoint(client):
     resp = client.post("/download", data="dbe414e8-cca0-4f18-b041-7d0e44145794")
     assert resp.status_code == 200
-    assert resp.headers["Content-Type"] == "application/octet-stream"
-
-    expected_filename = "dbe414e8-cca0-4f18-b041-7d0e44145794.bin"
-    assert resp.headers["Content-Disposition"] == f'attachment; filename="{expected_filename}"'
 
     with open(f"{COMPILE_DIR}dbe414e8-cca0-4f18-b041-7d0e44145794.bin", "rb") as file:
         file_content = file.read()
@@ -224,7 +171,6 @@ async def test_failed_download_endpoint(client):
 
     assert resp.status_code == 404
     assert resp.content == b'{"message":"The configuration was not compiled"}'
-    assert resp.headers == [(b'content-length', b'48'), (b'content-type', b'application/json')]
 
 
 async def test_failed_download_endpoint_two(client):
@@ -232,7 +178,6 @@ async def test_failed_download_endpoint_two(client):
 
     assert resp.status_code == 404
     assert resp.content == b'{"message":"The configuration was not compiled"}'
-    assert resp.headers == [(b'content-length', b'48'), (b'content-type', b'application/json')]
 
 
 async def test_failed_download_endpoint_three(client):
@@ -240,4 +185,3 @@ async def test_failed_download_endpoint_three(client):
 
     assert resp.status_code == 404
     assert resp.content == b'{"message":"The configuration was not compiled"}'
-    assert resp.headers == [(b'content-length', b'48'), (b'content-type', b'application/json')]

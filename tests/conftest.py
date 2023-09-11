@@ -1,12 +1,8 @@
-import hashlib
 import os
 import sys
-import uuid
-from datetime import timedelta
 from typing import Generator, Any
 
 import pytest
-import yaml
 from jose import jwt
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
@@ -15,13 +11,11 @@ from starlette.testclient import TestClient
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 import settings
-from lib.login import create_access_token
 
 from db.connect import get_db
 from main import app
 import asyncio
 import asyncpg
-
 
 CLEAN_TABLES = [
     "config",
@@ -30,6 +24,7 @@ CLEAN_TABLES = [
 ]
 
 TEST_DATABASE_URL = os.environ.get("TEST_DATABASE_URL")
+
 
 @pytest.fixture(scope="session")
 def event_loop():
@@ -98,153 +93,6 @@ async def asyncpg_pool():
     pool.close()
 
 
-@pytest.fixture
-async def get_config_from_database(asyncpg_pool):
-    async def get_config_from_database_by_name_config(name_config: uuid):
-        async with asyncpg_pool.acquire() as connection:
-            return await connection.fetch("SELECT * FROM config WHERE name_config = $1;", name_config)
-
-    return get_config_from_database_by_name_config
-
-
-@pytest.fixture
-async def get_config_by_config_json(asyncpg_pool):
-    async def get_config_from_database_by_config_json(config_json: str):
-        async with asyncpg_pool.acquire() as connection:
-            return await connection.fetch("SELECT * FROM config WHERE config_json = $1;", config_json)
-
-    return get_config_from_database_by_config_json
-
-
-@pytest.fixture
-async def create_config_in_database(asyncpg_pool):
-    async def create_config_in_database(
-            name_config: uuid.UUID,
-            hash_yaml: str,
-            compile_test: bool,
-            name_esphome: str,
-            platform: str,
-            config_json: str
-    ):
-        async with asyncpg_pool.acquire() as connection:
-            return await connection.execute(
-                """INSERT INTO config VALUES ($1, $2, $3, $4, $5, $6)""",
-                name_config,
-                hash_yaml,
-                compile_test,
-                name_esphome,
-                platform,
-                config_json,
-            )
-
-    return create_config_in_database
-
-
-@pytest.fixture
-async def get_user_from_database(asyncpg_pool):
-    async def get_user_from_database(email: str):
-        async with asyncpg_pool.acquire() as connection:
-            return await connection.fetch("SELECT * FROM users WHERE email = $1;", email)
-
-    return get_user_from_database
-
-
-@pytest.fixture
-async def get_user_from_database_by_user_id(asyncpg_pool):
-    async def get_user_from_database(user_id: str):
-        async with asyncpg_pool.acquire() as connection:
-            return await connection.fetch("SELECT * FROM users WHERE user_id = $1;", user_id)
-
-    return get_user_from_database
-
-
-@pytest.fixture
-async def get_favourites_from_database(asyncpg_pool):
-    async def get_favourites_from_database(id: int):
-        async with asyncpg_pool.acquire() as connection:
-            return await connection.fetch("SELECT * FROM user_config WHERE id = $1;", id)
-
-    return get_favourites_from_database
-
-
-@pytest.fixture
-async def get_favourites_from_database_by_user_id(asyncpg_pool):
-    async def get_favourites_from_database_by_user_id(user_id: str):
-        async with asyncpg_pool.acquire() as connection:
-            return await connection.fetch("SELECT * FROM user_config WHERE user_id = $1;", user_id)
-
-    return get_favourites_from_database_by_user_id
-
-
-@pytest.fixture
-async def create_favourites_in_database(asyncpg_pool):
-    async def create_favourites_in_database(
-            id: int,
-            user_id: str,
-            name_config: uuid.UUID,
-            name_esphome: str,
-    ):
-        async with asyncpg_pool.acquire() as connection:
-            await connection.execute(
-                """INSERT INTO user_config VALUES ($1, $2, $3, $4)""",
-                id,
-                user_id,
-                name_config,
-                name_esphome,
-            )
-            return await connection.fetch("SELECT * FROM user_config WHERE id = $1;", id)
-
-    return create_favourites_in_database
-
-
-@pytest.fixture
-async def create_test_user(asyncpg_pool):
-    async def create_test_user(
-            user_id: str,
-            name: str,
-            surname: str,
-            email: str,
-            is_active: bool
-    ):
-        async with asyncpg_pool.acquire() as connection:
-            await connection.execute(
-                """INSERT INTO users VALUES ($1, $2, $3, $4, $5)""",
-                user_id,
-                name,
-                surname,
-                email,
-                is_active,
-            )
-            return await connection.fetch("SELECT * FROM users WHERE email = $1;", email)
-
-    return create_test_user
-
-
-@pytest.fixture
-async def create_test_config(asyncpg_pool):
-    async def create_test_config(
-            name_config: uuid.UUID,
-            hash_yaml: str,
-            compile_test: bool,
-            name_esphome: str,
-            platform: str,
-            config_json: str
-    ):
-        async with asyncpg_pool.acquire() as connection:
-            await connection.execute(
-                """INSERT INTO config VALUES ($1, $2, $3, $4, $5, $6)""",
-                name_config,
-                hash_yaml,
-                compile_test,
-                name_esphome,
-                platform,
-                config_json,
-            )
-            return await connection.fetch("SELECT * FROM config WHERE config_json = $1;", config_json)
-
-    return create_test_config
-
-
 def get_file_name(data_from_resp):
     start_text = "./uploaded_files/"
     end_text = ".yaml"
@@ -254,21 +102,6 @@ def get_file_name(data_from_resp):
 
     extracted_content = data_from_resp[start_index:end_index]
     return extracted_content
-
-
-def get_hash_config(config_data):
-    yaml_text = yaml.dump(config_data)
-    m = hashlib.md5()
-    m.update(yaml_text.encode('utf-8'))
-    return m.hexdigest()
-
-
-async def create_test_token(email):
-    access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
-    return create_access_token(
-        data={"sub": email},
-        expires_delta=access_token_expires,
-    )
 
 
 async def decode_test_token(access_token):
