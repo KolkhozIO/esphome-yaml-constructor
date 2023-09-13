@@ -12,7 +12,7 @@ from api.config import config_router
 
 app = FastAPI()
 
-origins = [os.environ.get('REACT_APP_APP_URL')]
+origins = [f"{os.environ.get('REACT_APP_APP_URL')}"]
 
 app.add_middleware(
     CORSMiddleware,
