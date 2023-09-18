@@ -6,7 +6,7 @@ import re
 import yaml
 
 from db.dals import ConfigDAL, FavouritesDAL, GoogleDAL
-from settings import UPLOADED_FILES_PATH, COMPILE_DIR
+from settings import UPLOADED_FILES_PATH, COMPILE_DIR, COMPILE_DIR_OTA
 
 
 async def save_file_to_uploads(request, file_name):
@@ -72,6 +72,9 @@ async def post_compile_process(file_name, db):
         shutil.copy2(
             f"{UPLOADED_FILES_PATH}.esphome/build/{info_config.name_esphome}/.pioenvs/{info_config.name_esphome}/firmware-factory.bin",
             f"{COMPILE_DIR}{file_name}.bin")
+        shutil.copy2(
+            f"{UPLOADED_FILES_PATH}.esphome/build/{info_config.name_esphome}/.pioenvs/{info_config.name_esphome}/firmware.bin",
+            f"{COMPILE_DIR_OTA}{file_name}.bin")
     os.remove(f'{UPLOADED_FILES_PATH}{file_name}.yaml')
 
 
