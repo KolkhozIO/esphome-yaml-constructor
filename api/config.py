@@ -3,7 +3,7 @@ import os
 import subprocess
 import uuid
 
-from fastapi import APIRouter, status, Request, Depends
+from fastapi import APIRouter, status, Request, Depends, HTTPException
 from fastapi.responses import StreamingResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 from starlette.background import BackgroundTasks
@@ -14,7 +14,7 @@ from db.dals import ConfigDAL
 from db.schemas import SaveConfigResponse
 from lib.methods import save_file_to_uploads, read_stream, get_info_config, post_compile_process, \
     _execute_function
-from settings import UPLOADED_FILES_PATH, COMPILE_CMD
+from settings import UPLOADED_FILES_PATH, COMPILE_CMD, COMPILE_DIR, COMPILE_DIR_OTA
 
 config_router = APIRouter()
 
@@ -39,6 +39,8 @@ async def validate(
 
 @config_router.post("/save_config", status_code=status.HTTP_200_OK)
 async def save_config(request: Request, db: AsyncSession = Depends(get_db)):
+    if await request.json() is None:
+        raise HTTPException(status_code=404, detail="Item not found")
     config_info_db = await get_info_config(request)
 
     old_file_info_from_db = await _execute_function(ConfigDAL,
@@ -75,12 +77,29 @@ async def save_config(request: Request, db: AsyncSession = Depends(get_db)):
 async def compile_file(request: Request, db: AsyncSession = Depends(get_db),
                        background_tasks: BackgroundTasks = BackgroundTasks()):
     file_name = (await request.body()).decode('utf-8')
+    info_config = await _execute_function(ConfigDAL,
+                                          ConfigDAL.get_config,
+                                          session=db,
+                                          name_config=file_name)
+    if file_name == '':
+        return JSONResponse(
+            status_code=400,
+            content={"message": f"Config not save"},
+        )
+    elif info_config is None:
+        return JSONResponse(
+            status_code=404,
+            content={"message": f"Config not save"},
+        )
 
     cmd = f"{COMPILE_CMD} {UPLOADED_FILES_PATH}{file_name}.yaml"
     process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
 
-    background_tasks.add_task(post_compile_process, file_name, db)
-    return StreamingResponse(read_stream(process.stdout), media_type='text/event-stream')
+    if info_config.name_esphome == '' or info_config.name_esphome is None:
+        return StreamingResponse(read_stream(process.stdout), media_type='text/event-stream')
+    else:
+        background_tasks.add_task(post_compile_process, file_name, db)
+        return StreamingResponse(read_stream(process.stdout), media_type='text/event-stream')
 
 
 @config_router.post("/download", status_code=status.HTTP_200_OK)
@@ -96,16 +115,30 @@ async def download_bin(
                 'message': 'The configuration was not compiled'
             }
         )
+    elif not os.path.exists(f'{COMPILE_DIR}{file_name}.bin'):
+        return JSONResponse(
+            status_code=status.HTTP_404_NOT_FOUND,
+            content={
+                'message': 'The configuration was not compiled'
+            }
+        )
     else:
         info_config = await _execute_function(ConfigDAL,
                                               ConfigDAL.get_config,
                                               session=db,
                                               name_config=file_name)
-        response = FileResponse(f"compile_files/{file_name}.bin",
-                                filename=f"{info_config.name_esphome}.bin",
-                                media_type="application/octet-stream")
-        response.headers["Access-Control-Expose-Headers"] = "Content-Disposition"
-        return response
+        if info_config is not None:
+            response = FileResponse(f"compile_files/{file_name}.bin",
+                                    filename=f"{info_config.name_esphome}.bin",
+                                    media_type="application/octet-stream")
+            response.headers["Access-Control-Expose-Headers"] = "Content-Disposition"
+            return response
+        else:
+            response = FileResponse(f"compile_files/{file_name}.bin",
+                                    filename=f"{file_name}.bin",
+                                    media_type="application/octet-stream")
+            response.headers["Access-Control-Expose-Headers"] = "Content-Disposition"
+            return response
 
 
 @config_router.post("/download/ota", status_code=status.HTTP_200_OK)
@@ -121,13 +154,27 @@ async def download_ota(
                 'message': 'The configuration was not compiled'
             }
         )
+    elif not os.path.exists(f'{COMPILE_DIR_OTA}{file_name}.bin'):
+        return JSONResponse(
+            status_code=status.HTTP_404_NOT_FOUND,
+            content={
+                'message': 'The configuration was not compiled'
+            }
+        )
     else:
         info_config = await _execute_function(ConfigDAL,
                                               ConfigDAL.get_config,
                                               session=db,
                                               name_config=file_name)
-        response = FileResponse(f"compile_files_ota/{file_name}.bin",
-                                filename=f"{info_config.name_esphome}.bin",
-                                media_type="application/octet-stream")
-        response.headers["Access-Control-Expose-Headers"] = "Content-Disposition"
-        return response
+        if info_config is not None:
+            response = FileResponse(f"compile_files_ota/{file_name}.bin",
+                                    filename=f"{info_config.name_esphome}.bin",
+                                    media_type="application/octet-stream")
+            response.headers["Access-Control-Expose-Headers"] = "Content-Disposition"
+            return response
+        else:
+            response = FileResponse(f"compile_files_ota/{file_name}.bin",
+                                    filename=f"{file_name}.bin",
+                                    media_type="application/octet-stream")
+            response.headers["Access-Control-Expose-Headers"] = "Content-Disposition"
+            return response
