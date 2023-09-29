@@ -23,7 +23,7 @@ CLEAN_TABLES = [
     "user_config"
 ]
 
-TEST_DATABASE_URL = os.environ.get("TEST_DATABASE_URL")
+TEST_DATABASE_URL = os.environ.get("SQLALCHEMY_DATABASE_POSTGRES_URL")
 
 
 @pytest.fixture(scope="session")
@@ -35,8 +35,6 @@ def event_loop():
 
 @pytest.fixture(scope="session", autouse=True)
 async def run_migrations():
-    os.system("alembic init migrations")
-    os.system('alembic revision --autogenerate -m "test running migrations"')
     os.system("alembic upgrade heads")
 
 

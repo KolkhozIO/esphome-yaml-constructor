@@ -18,13 +18,12 @@ services:
   backend:
     depends_on:
       - db
-      - test-db
     links:
       - db:db
-      - test-db:test-db
     build:
       context: .
       dockerfile: Dockerfile-backend
+    command: bash -c 'while !</dev/tcp/db/5432; do sleep 1; done; alembic upgrade head && pytest tests && uvicorn main:app --reload --host 0.0.0.0'
     env_file:
       - .env
     ports:
@@ -40,23 +39,10 @@ services:
       - POSTGRES_USER=kolkhoz
       - POSTGRES_PASSWORD=kolkhoz
       - POSTGRES_DB=kolkhoz
+    networks:
+      - my_network
     ports:
       - "5432:5432"
-    networks:
-      - my_network
-
-  test-db:
-    container_name: "test-db"
-    image: postgres:15-alpine
-    restart: always
-    environment:
-      - POSTGRES_USER=testkolkhoz
-      - POSTGRES_PASSWORD=testkolkhoz
-      - POSTGRES_DB=testkolkhoz
-    networks:
-      - my_network
-    ports:
-      - "5433:5432"
 
 networks:
   my_network:
