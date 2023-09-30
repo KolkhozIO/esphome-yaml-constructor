@@ -28,12 +28,19 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
-      - name: Show Updated Docker Compose File
-        run: cat docker-compose.yaml
       - name: Replace Docker Compose command
         run: |
           sed -i 's/ && uvicorn main:app --reload --host 0.0.0.0//' docker-compose.yaml
       - name: Show Updated Docker Compose File
         run: cat docker-compose.yaml
       - name: Run Docker Compose
-        run: docker-compose up --build backend db
+        run: |
+          docker-compose up --build backend db
+          CONTAINER_EXIT_CODE=$(docker-compose ps -q backend | xargs docker inspect -f '{{.State.ExitCode}}')
+          if [ $CONTAINER_EXIT_CODE -eq 0 ]; then
+            echo "Container 'backend' exited successfully."
+            exit 0
+          else
+            echo "Container 'backend' exited with an error code: $CONTAINER_EXIT_CODE"
+            exit 1
+          fi
