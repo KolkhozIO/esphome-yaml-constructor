@@ -117,7 +117,7 @@ async def test_compile_endpoint(client):
 
     resp = client.post("/compile", data=name_config)
 
-    assert resp.status_code == 400
+    assert resp.status_code == 200
     assert "INFO Successfully compiled program." in resp.text
 
 
