@@ -32,7 +32,7 @@ jobs:
         run: cat docker-compose.yaml
       - name: Replace Docker Compose command
         run: |
-          sed -i "s|    command: bash -c 'while !</dev/tcp/db/5432; do sleep 1; done; alembic upgrade head && pytest tests && uvicorn main:app --reload --host 0.0.0.0'|    command: bash -c 'while !</dev/tcp/db/5432; do sleep 1; done; alembic upgrade head && pytest tests'|g" docker-compose.yaml
+          sed -i "s|command: bash -c 'while !</dev/tcp/db/5432; do sleep 1; done; alembic upgrade head && pytest tests && uvicorn main:app --reload --host 0.0.0.0'|command: bash -c 'while !</dev/tcp/db/5432; do sleep 1; done; alembic upgrade head && pytest tests'|g" docker-compose.yaml
       - name: Show Updated Docker Compose File
         run: cat docker-compose.yaml
       - name: Run Docker Compose
