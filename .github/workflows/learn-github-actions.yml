@@ -33,7 +33,7 @@ jobs:
         run: cat docker-compose.yaml
       - name: Run Docker Compose
         run: |
-          docker-compose up --build backend db --exit-code-from backend
+          docker-compose up --build --exit-code-from backend backend db
           CONTAINER_EXIT_CODE=$(docker-compose ps -q backend | xargs docker inspect -f '{{.State.ExitCode}}')
           if [ $CONTAINER_EXIT_CODE -eq 0 ]; then
             echo "Container 'backend' exited successfully."
