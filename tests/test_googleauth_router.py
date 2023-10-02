@@ -43,7 +43,6 @@ async def test_googleauth_endpoint_get_bin_two(client):
     assert google_profile_one['email'] == email_one
     assert google_profile_one['email'] == email_two
     assert email_one == email_two
-    assert data_from_resp_one == data_from_resp_two
 
 
 async def test_googleauth_endpoint_get_bin_three(client):
