@@ -25,7 +25,7 @@ jobs:
         run: python -m pip install --upgrade pip
       - name: Replace Docker Compose command
         run: |
-          sed -i 's/ && uvicorn main:app --reload --host 0.0.0.0//' docker-compose.yaml
+          sed -i 's/uvicorn main:app --reload --host 0.0.0.0/pytest tests/' docker-compose.yaml
       - name: Show Updated Docker Compose File
         run: cat docker-compose.yaml
       - name: Run Docker Compose
