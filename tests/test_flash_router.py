@@ -33,7 +33,7 @@ async def test_flash_endpoint_get_manifest(client):
     os.remove(f'{UPLOADED_FILES_PATH}{data_from_resp_one["name_config"]}.yaml')
 
 
-async def test_flash_endpoint_get_manifest_two(client):
+async def test_flash_endpoint_fail_bad_name_config(client):
     # Create a test configuration
     resp = client.post("/save_config", data=json.dumps(config_data))
     data_from_resp_one = resp.json()
@@ -45,14 +45,14 @@ async def test_flash_endpoint_get_manifest_two(client):
     os.remove(f'{UPLOADED_FILES_PATH}{data_from_resp_one["name_config"]}.yaml')
 
 
-async def test_flash_endpoint_get_manifest_three(client):
+async def test_flash_endpoint_fail_none_name_config(client):
     resp = client.get("/manifest/None")
 
     assert resp.status_code == 422
     assert resp.content == b'{"detail":[{"loc":["path","file_name"],"msg":"value is not a valid uuid","type":"type_error.uuid"}]}'
 
 
-async def test_flash_endpoint_get_manifest_four(client):
+async def test_flash_endpoint_fail_no_name_config(client):
     resp = client.get("/manifest/")
 
     assert resp.status_code == 404
@@ -71,7 +71,7 @@ async def test_flash_endpoint_get_bin(client):
     assert resp.content == file_content
 
 
-async def test_flash_endpoint_get_bin_two(client):
+async def test_flash_endpoint_fail_no_existent_bin(client):
     filename = "dbe414e8-cca0-4f18-b041-7d0e44145794.bin"
     assert os.path.exists(f'{COMPILE_DIR}{filename}')
 
@@ -83,14 +83,14 @@ async def test_flash_endpoint_get_bin_two(client):
     assert resp.content == b'{"message":"The manifest contains a path to a file that does not exist."}'
 
 
-async def test_flash_endpoint_get_bin_three(client):
+async def test_flash_endpoint_fail_none_filename_bin(client):
     resp = client.get(f"/manifest/bin/None")
 
     assert resp.status_code == 404
     assert resp.content == b'{"detail":"Not Found"}'
 
 
-async def test_flash_endpoint_get_bin_four(client):
+async def test_flash_endpoint_fail_no_filename_bin(client):
     resp = client.get(f"/manifest/bin/")
 
     assert resp.status_code == 422

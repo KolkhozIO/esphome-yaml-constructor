@@ -5,7 +5,17 @@ from uuid import uuid4
 
 from settings import COMPILE_DIR, UPLOADED_FILES_PATH, COMPILE_DIR_OTA
 from tests.conftest import get_file_name
-from tests.settings_tests import config_data, config_failed_data
+from tests.settings_tests import config_data, config_failed_data, config_failed_data_two
+
+
+async def create_config(client, config):
+    resp = client.post("/save_config", data=json.dumps(config))
+    data_from_resp_config = resp.json()
+
+    assert resp.status_code == 200
+    assert uuid.UUID(data_from_resp_config.get("name_config"), version=4) is not None
+    os.remove(f'{UPLOADED_FILES_PATH}{data_from_resp_config.get("name_config")}.yaml')
+    return data_from_resp_config["name_config"]
 
 
 async def test_validate_endpoint(client):
@@ -55,7 +65,7 @@ async def test_validate_endpoint(client):
     assert resp.content == content
 
 
-async def test_failed_validate_endpoint(client):
+async def test_validate_endpoint_none_data(client):
     resp = client.post("/validate", data=json.dumps(None))
 
     file_name = get_file_name(resp.text)
@@ -70,46 +80,27 @@ async def test_failed_validate_endpoint(client):
     assert resp.content == content
 
 
-async def test_save_config_one(client):
-    resp = client.post("/save_config", data=json.dumps(config_data))
-    data_from_resp_one = resp.json()
-
-    assert resp.status_code == 200
-    assert uuid.UUID(data_from_resp_one.get("name_config"), version=4) is not None
-    os.remove(f'{UPLOADED_FILES_PATH}{data_from_resp_one.get("name_config")}.yaml')
+async def test_save_config(client):
+    await create_config(client, config_data)
 
 
-async def test_save_config_two(client):
-    resp = client.post("/save_config", data=json.dumps(config_data))
-    data_from_resp_one = resp.json()
-    assert resp.status_code == 200
-    assert uuid.UUID(data_from_resp_one.get("name_config"), version=4) is not None
-    os.remove(f'{UPLOADED_FILES_PATH}{data_from_resp_one.get("name_config")}.yaml')
-
-    resp = client.post("/save_config", data=json.dumps(config_data))
-    data_from_resp_two = resp.json()
-    assert resp.status_code == 200
-    assert uuid.UUID(data_from_resp_two.get("name_config"), version=4) is not None
-    assert data_from_resp_one == data_from_resp_two
-    os.remove(f'{UPLOADED_FILES_PATH}{data_from_resp_two.get("name_config")}.yaml')
+async def test_save_two_config(client):
+    data_from_resp_config_one = await create_config(client, config_data)
+    data_from_resp_config_two = await create_config(client, config_data)
+    assert data_from_resp_config_one == data_from_resp_config_two
 
 
-async def test_save_config_three(client):
+async def test_save_config_after_share(client):
     resp = client.post("/share", data=json.dumps(config_data))
     data_from_resp_one = resp.json()
     assert resp.status_code == 201
-    assert uuid.UUID(data_from_resp_one.get("uuid"), version=4) is not None
+    assert uuid.UUID(data_from_resp_one["uuid"], version=4) is not None
 
-    resp = client.post("/save_config", data=json.dumps(config_data))
-    data_from_resp_two = resp.json()
-
-    assert resp.status_code == 200
-    assert uuid.UUID(data_from_resp_two.get("name_config"), version=4) is not None
-    assert data_from_resp_one.get("uuid") == data_from_resp_two.get("name_config")
-    os.remove(f'{UPLOADED_FILES_PATH}{data_from_resp_two.get("name_config")}.yaml')
+    data_from_resp_config = await create_config(client, config_data)
+    assert data_from_resp_one["uuid"] == data_from_resp_config
 
 
-async def test_failed_save_config_endpoint(client):
+async def test_failed_save_config_none_data(client):
     resp = client.post("/save_config", data=json.dumps(None))
 
     assert resp.status_code == 404
@@ -128,7 +119,33 @@ async def test_compile_endpoint(client):
     os.remove(f'{COMPILE_DIR_OTA}{name_config}.bin')
 
 
-async def test_compile_endpoint_two(client):
+async def test_compile_endpoint_with_failed_config_two(client):
+    resp = client.post("/save_config", data=json.dumps(config_failed_data_two))
+    name_config = resp.json()["name_config"]
+
+    resp = client.post("/compile", data=name_config)
+
+    content = (b"INFO Reading configuration ./uploaded_files/"
+               + name_config.encode('utf-8')
+               + b".yaml...\n\nWARNING 'my_device': Using the '_' (underscore) character in the hostname is "
+                 b"discouraged as it can cause problems with some DHCP and local name services. For more information, "
+                 b"see https://esphome.io/guides/faq.html#why-shouldn-t-i-use-underscores-in-my-device-name"
+                 b"\n\nFailed config\n\n\n\ndallas: [source ./uploaded_files/"
+               + name_config.encode('utf-8')
+               + b".yaml:3]\n\n  \n\n  'pin' is a required option for [0].\n\n  - {}"
+                 b"\n\nweb_server: [source ./uploaded_files/"
+               + name_config.encode('utf-8')
+               + b".yaml:26]\n\n  \n\n  expected a dictionary.\n\n  null\n\nwifi: [source ./uploaded_files/"
+               + name_config.encode('utf-8')
+               + b".yaml:28]\n\n  ap: \n\n    password: ''\n\n    \n\n    SSID can't be empty.\n\n    ssid: ''"
+                 b"\n\n  password: ssFsasvC3WFU\n\n  ssid: Fkdvjrekd\n\nmodbus: None\n\n  {}"
+                 b"\n\nComponent modbus requires component uart\n\n\n\n")
+
+    assert resp.status_code == 200
+    assert resp.content == content
+
+
+async def test_compile_endpoint_with_failed_config(client):
     resp = client.post("/save_config", data=json.dumps(config_failed_data))
     name_config = resp.json()["name_config"]
 
@@ -146,7 +163,7 @@ async def test_compile_endpoint_two(client):
     os.remove(f'{UPLOADED_FILES_PATH}{name_config}.yaml')
 
 
-async def test_failed_compile_endpoint_two(client):
+async def test_failed_compile_endpoint_fail_name_config(client):
     resp = client.post("/save_config", data=json.dumps(config_data))
     name_config = resp.json()["name_config"]
     fail_name_config = str(uuid4())
@@ -159,7 +176,7 @@ async def test_failed_compile_endpoint_two(client):
     os.remove(f'{UPLOADED_FILES_PATH}{name_config}.yaml')
 
 
-async def test_failed_compile_endpoint(client):
+async def test_failed_compile_endpoint_none_data(client):
     resp = client.post("/compile", data=None)
 
     assert resp.status_code == 400
@@ -175,21 +192,21 @@ async def test_download_endpoint(client):
     assert resp.content == file_content
 
 
-async def test_failed_download_endpoint(client):
+async def test_failed_download_endpoint_none_data(client):
     resp = client.post("/download", data=None)
 
     assert resp.status_code == 404
     assert resp.content == b'{"message":"The configuration was not compiled"}'
 
 
-async def test_failed_download_endpoint_two(client):
+async def test_failed_download_endpoint_no_data(client):
     resp = client.post("/download", data="")
 
     assert resp.status_code == 404
     assert resp.content == b'{"message":"The configuration was not compiled"}'
 
 
-async def test_failed_download_endpoint_three(client):
+async def test_failed_download_endpoint_fail_data(client):
     resp = client.post("/download", data="6be414e8-cca0-4f18-b041-7d0e44145794")
 
     assert resp.status_code == 404
@@ -205,22 +222,23 @@ async def test_download_ota_endpoint(client):
     assert resp.content == file_content
 
 
-async def test_failed_download_ota_endpoint(client):
+async def test_failed_download_ota_endpoint_none_data(client):
     resp = client.post("/download/ota", data=None)
 
     assert resp.status_code == 404
     assert resp.content == b'{"message":"The configuration was not compiled"}'
 
 
-async def test_failed_download_ota_endpoint_two(client):
+async def test_failed_download_ota_endpoint_no_data(client):
     resp = client.post("/download/ota", data="")
 
     assert resp.status_code == 404
     assert resp.content == b'{"message":"The configuration was not compiled"}'
 
 
-async def test_failed_download_ota_endpoint_three(client):
+async def test_failed_download_ota_endpoint_fail_data(client):
     resp = client.post("/download/ota", data="6be414e8-cca0-4f18-b041-7d0e44145794")
 
     assert resp.status_code == 404
     assert resp.content == b'{"message":"The configuration was not compiled"}'
+

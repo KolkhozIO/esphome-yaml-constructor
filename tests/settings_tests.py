@@ -69,6 +69,51 @@ config_failed_data = {
     }
 }
 
+config_failed_data_two = {
+    'esphome': {
+        'name': 'my_device'
+    },
+    'esp32': {
+        'board': 'esp32doit-devkit-v1',
+        'framework': {
+            'type': 'arduino'
+        }
+    },
+    'api': {
+        'password': ''
+    },
+    'ota': {
+        'password': 'ssFsasvC3WFU'
+    },
+    'wifi': {
+        'password': 'ssFsasvC3WFU',
+        'ap': {
+            'password': '',
+            'ssid': ''
+        },
+        'ssid': 'Fkdvjrekd'
+    },
+    'logger': {
+        'level': 'debug'
+    },
+    'web_server': 'null',
+    'display': {},
+    'dallas': {},
+    'i2c': {
+        'sda': 21,
+        'scl': 22,
+        'scan': True
+    },
+    'modbus_controller': {},
+    'sensor': {
+        'pin': 'GPIO34',
+        'name': 'A34 sensor',
+        'platform': 'adc',
+        'attenuation': '11db',
+        'update_interval': '1s'
+    }
+}
+
 config_data_two = {
     'esphome': {
         'name': 'test2'
