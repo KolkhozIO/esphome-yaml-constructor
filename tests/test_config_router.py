@@ -145,24 +145,6 @@ async def test_compile_endpoint_with_failed_config_two(client):
     assert resp.content == content
 
 
-async def test_compile_endpoint_with_failed_config(client):
-    resp = client.post("/save_config", data=json.dumps(config_failed_data))
-    name_config = resp.json()["name_config"]
-
-    resp = client.post("/compile", data=name_config)
-
-    content = (b"INFO Reading configuration ./uploaded_files/"
-               + name_config.encode('utf-8')
-               + b".yaml...\n\nFailed config\n\n\n\nwifi: [source ./uploaded_files/"
-               + name_config.encode('utf-8')
-               + b".yaml:18]\n\n  ap: \n\n    password: ''\n\n    \n\n    SSID can't be empty.\n\n    ssid: ''"
-                 b"\n\n  password: ''\n\n  \n\n  SSID can't be empty.\n\n  ssid: ''\n\n")
-
-    assert resp.status_code == 200
-    assert resp.content == content
-    os.remove(f'{UPLOADED_FILES_PATH}{name_config}.yaml')
-
-
 async def test_failed_compile_endpoint_fail_name_config(client):
     resp = client.post("/save_config", data=json.dumps(config_data))
     name_config = resp.json()["name_config"]
