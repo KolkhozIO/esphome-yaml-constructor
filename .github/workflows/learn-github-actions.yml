@@ -1,9 +1,8 @@
 name: Pull Request
 
 on:
-  pull_request:
-    branches:
-      - master
+  push:
+    branches: [ ]
 
 jobs:
   test:
