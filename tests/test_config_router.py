@@ -5,7 +5,7 @@ from uuid import uuid4
 
 from settings import COMPILE_DIR, UPLOADED_FILES_PATH, COMPILE_DIR_OTA
 from tests.conftest import get_file_name
-from tests.settings_tests import config_data, config_failed_data, config_failed_data_two
+from tests.settings_tests import config_data, config_failed_data
 
 
 async def create_config(client, config):
@@ -119,30 +119,22 @@ async def test_compile_endpoint(client):
     os.remove(f'{COMPILE_DIR_OTA}{name_config}.bin')
 
 
-async def test_compile_endpoint_with_failed_config_two(client):
-    resp = client.post("/save_config", data=json.dumps(config_failed_data_two))
+async def test_compile_endpoint_with_failed_config(client):
+    resp = client.post("/save_config", data=json.dumps(config_failed_data))
     name_config = resp.json()["name_config"]
 
     resp = client.post("/compile", data=name_config)
 
     content = (b"INFO Reading configuration ./uploaded_files/"
                + name_config.encode('utf-8')
-               + b".yaml...\n\nWARNING 'my_device': Using the '_' (underscore) character in the hostname is "
-                 b"discouraged as it can cause problems with some DHCP and local name services. For more information, "
-                 b"see https://esphome.io/guides/faq.html#why-shouldn-t-i-use-underscores-in-my-device-name"
-                 b"\n\nFailed config\n\n\n\ndallas: [source ./uploaded_files/"
+               + b".yaml...\n\nFailed config\n\n\n\nwifi: [source ./uploaded_files/"
                + name_config.encode('utf-8')
-               + b".yaml:3]\n\n  \n\n  'pin' is a required option for [0].\n\n  - {}"
-                 b"\n\nweb_server: [source ./uploaded_files/"
-               + name_config.encode('utf-8')
-               + b".yaml:26]\n\n  \n\n  expected a dictionary.\n\n  null\n\nwifi: [source ./uploaded_files/"
-               + name_config.encode('utf-8')
-               + b".yaml:28]\n\n  ap: \n\n    password: ''\n\n    \n\n    SSID can't be empty.\n\n    ssid: ''"
-                 b"\n\n  password: ssFsasvC3WFU\n\n  ssid: Fkdvjrekd\n\nmodbus: None\n\n  {}"
-                 b"\n\nComponent modbus requires component uart\n\n\n\n")
+               + b".yaml:18]\n\n  ap: \n\n    password: ''\n\n    \n\n    SSID can't be empty.\n\n    ssid: ''"
+                 b"\n\n  password: ''\n\n  \n\n  SSID can't be empty.\n\n  ssid: ''\n\n")
 
     assert resp.status_code == 200
     assert resp.content == content
+    os.remove(f'{UPLOADED_FILES_PATH}{name_config}.yaml')
 
 
 async def test_failed_compile_endpoint_fail_name_config(client):
