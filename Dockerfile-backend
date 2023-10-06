@@ -20,5 +20,3 @@ COPY ./alembic.ini ./alembic.ini
 COPY ./pytest.ini ./pytest.ini
 
 EXPOSE 8000
-
-#CMD ["bash", "-c", "alembic upgrade head && sed -i 's#sqlalchemy.url = postgresql://kolkhoz:kolkhoz@db:5432/kolkhoz#sqlalchemy.url = postgresql://testkolkhoz:testkolkhoz@test-db:5432/testkolkhoz#g' alembic.ini && pytest tests && sed -i 's#sqlalchemy.url = postgresql://testkolkhoz:testkolkhoz@test-db:5432/testkolkhoz#sqlalchemy.url = postgresql://kolkhoz:kolkhoz@db:5432/kolkhoz#g' alembic.ini && uvicorn main:app --reload --host 0.0.0.0"]
