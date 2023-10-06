@@ -81,12 +81,7 @@ async def compile_file(request: Request, db: AsyncSession = Depends(get_db),
                                           ConfigDAL.get_config,
                                           session=db,
                                           name_config=file_name)
-    if file_name == '':
-        return JSONResponse(
-            status_code=400,
-            content={"message": f"Config not save"},
-        )
-    elif info_config is None:
+    if file_name == '' or info_config is None:
         return JSONResponse(
             status_code=404,
             content={"message": f"Config not save"},
@@ -108,14 +103,7 @@ async def download_bin(
 ):
     # get information about the file, delete the yaml file, return the binary to the user
     file_name = (await request.body()).decode('utf-8')
-    if not file_name:
-        return JSONResponse(
-            status_code=status.HTTP_404_NOT_FOUND,
-            content={
-                'message': 'The configuration was not compiled'
-            }
-        )
-    elif not os.path.exists(f'{COMPILE_DIR}{file_name}.bin'):
+    if not file_name or not os.path.exists(f'{COMPILE_DIR}{file_name}.bin'):
         return JSONResponse(
             status_code=status.HTTP_404_NOT_FOUND,
             content={
@@ -131,14 +119,12 @@ async def download_bin(
             response = FileResponse(f"compile_files/{file_name}.bin",
                                     filename=f"{info_config.name_esphome}.bin",
                                     media_type="application/octet-stream")
-            response.headers["Access-Control-Expose-Headers"] = "Content-Disposition"
-            return response
         else:
             response = FileResponse(f"compile_files/{file_name}.bin",
                                     filename=f"{file_name}.bin",
                                     media_type="application/octet-stream")
-            response.headers["Access-Control-Expose-Headers"] = "Content-Disposition"
-            return response
+        response.headers["Access-Control-Expose-Headers"] = "Content-Disposition"
+        return response
 
 
 @config_router.post("/download/ota", status_code=status.HTTP_200_OK)
@@ -147,14 +133,7 @@ async def download_ota(
 ):
     # get information about the file, delete the yaml file, return the binary to the user
     file_name = (await request.body()).decode('utf-8')
-    if not file_name:
-        return JSONResponse(
-            status_code=status.HTTP_404_NOT_FOUND,
-            content={
-                'message': 'The configuration was not compiled'
-            }
-        )
-    elif not os.path.exists(f'{COMPILE_DIR_OTA}{file_name}.bin'):
+    if not file_name or not os.path.exists(f'{COMPILE_DIR_OTA}{file_name}.bin'):
         return JSONResponse(
             status_code=status.HTTP_404_NOT_FOUND,
             content={
@@ -170,11 +149,9 @@ async def download_ota(
             response = FileResponse(f"compile_files_ota/{file_name}.bin",
                                     filename=f"{info_config.name_esphome}.bin",
                                     media_type="application/octet-stream")
-            response.headers["Access-Control-Expose-Headers"] = "Content-Disposition"
-            return response
         else:
             response = FileResponse(f"compile_files_ota/{file_name}.bin",
                                     filename=f"{file_name}.bin",
                                     media_type="application/octet-stream")
-            response.headers["Access-Control-Expose-Headers"] = "Content-Disposition"
-            return response
+        response.headers["Access-Control-Expose-Headers"] = "Content-Disposition"
+        return response

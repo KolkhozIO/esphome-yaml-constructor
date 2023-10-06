@@ -230,7 +230,8 @@ async def test_delete_favourites_fail_no_name_config(client):
 
     # Verify the response
     assert resp.status_code == 422
-    assert resp.content == b'{"detail":[{"loc":["query","name_config"],"msg":"value is not a valid uuid","type":"type_error.uuid"}]}'
+    assert resp.content == b'{"detail":[{"loc":["query","name_config"],"msg":"value is not a valid uuid",' \
+                           b'"type":"type_error.uuid"}]}'
 
 
 async def test_delete_favourites_fail_no_token(client):
@@ -369,7 +370,8 @@ async def test_get_one_favourites_fail_no_config(client):
 
     # Verify the response
     assert resp.status_code == 422
-    assert resp.content == b'{"detail":[{"loc":["query","name_config"],"msg":"value is not a valid uuid","type":"type_error.uuid"}]}'
+    assert resp.content == b'{"detail":[{"loc":["query","name_config"],"msg":"value is not a valid uuid",' \
+                           b'"type":"type_error.uuid"}]}'
 
 
 async def test_get_one_favourites_fail_no_token(client):
@@ -503,7 +505,8 @@ async def test_get_edit_favourites_fail_none_name_config(client):
     )
     # Verify the response
     assert resp.status_code == 422
-    assert resp.content == b'{"detail":[{"loc":["query","name_config"],"msg":"value is not a valid uuid","type":"type_error.uuid"}]}'
+    assert resp.content == b'{"detail":[{"loc":["query","name_config"],"msg":"value is not a valid uuid",' \
+                           b'"type":"type_error.uuid"}]}'
 
 
 async def test_get_edit_favourites_file_no_token(client):

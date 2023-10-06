@@ -53,7 +53,8 @@ async def test_share_config_fail_bad_name_config(client):
     resp = client.get(f"/share/?file_name={fail_name_config}")
 
     assert resp.status_code == 404
-    assert resp.content == b'{"message":"The configuration you are trying to access does not exist with the same name."}'
+    assert resp.content == b'{"message":"The configuration you are trying to access does not exist with the same ' \
+                           b'name."}'
 
 
 async def test_share_config_fail_none_name_config(client):
@@ -62,7 +63,8 @@ async def test_share_config_fail_none_name_config(client):
     resp = client.get(f"/share/?file_name=None")
 
     assert resp.status_code == 422
-    assert resp.content == b'{"detail":[{"loc":["query","file_name"],"msg":"value is not a valid uuid","type":"type_error.uuid"}]}'
+    assert resp.content == b'{"detail":[{"loc":["query","file_name"],"msg":"value is not a valid uuid",' \
+                           b'"type":"type_error.uuid"}]}'
 
 
 async def test_share_config_fail_no_name_config(client):
@@ -71,4 +73,5 @@ async def test_share_config_fail_no_name_config(client):
     resp = client.get(f"/share/?file_name=")
 
     assert resp.status_code == 422
-    assert resp.content == b'{"detail":[{"loc":["query","file_name"],"msg":"value is not a valid uuid","type":"type_error.uuid"}]}'
+    assert resp.content == b'{"detail":[{"loc":["query","file_name"],"msg":"value is not a valid uuid",' \
+                           b'"type":"type_error.uuid"}]}'

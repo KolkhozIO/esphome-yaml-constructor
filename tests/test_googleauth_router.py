@@ -36,19 +36,25 @@ async def test_googleauth_endpoint_two_authorizations(client):
 async def test_googleauth_endpoint_fail_none_profile(client):
     resp = client.post("/google/login", json=json.dumps(None))
 
-    assert resp.status_code == 404
-    assert resp.content == b'{"message":"No user information received from google"}'
+    assert resp.status_code == 422
+    assert resp.content == b'{"detail":[{"loc":["body"],"msg":"value is not a valid dict","type":"type_error.dict"}]}'
 
 
 async def test_googleauth_endpoint_fail_no_profile(client):
     resp = client.post("/google/login", json={})
 
-    assert resp.status_code == 404
-    assert resp.content == b'{"message":"Missing required keys: googleId, familyName, givenName, email"}'
+    assert resp.status_code == 422
+    assert resp.content == b'{"detail":[{"loc":["body","googleId"],"msg":"field required",' \
+                           b'"type":"value_error.missing"},{"loc":["body","familyName"],"msg":"field required",' \
+                           b'"type":"value_error.missing"},{"loc":["body","givenName"],"msg":"field required",' \
+                           b'"type":"value_error.missing"},{"loc":["body","email"],"msg":"field required",' \
+                           b'"type":"value_error.missing"}]}'
 
 
 async def test_googleauth_endpoint_fail_bed_profile(client):
     resp = client.post("/google/login", json=google_profile_two)
 
-    assert resp.status_code == 404
-    assert resp.content == b'{"message":"Missing required keys: googleId"}'
+    assert resp.status_code == 422
+    assert resp.content == b'{"detail":[{"loc":["body","googleId"],"msg":"field required",' \
+                           b'"type":"value_error.missing"}]}'
+

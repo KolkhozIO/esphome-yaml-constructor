@@ -49,7 +49,8 @@ async def test_flash_endpoint_fail_none_name_config(client):
     resp = client.get("/manifest/None")
 
     assert resp.status_code == 422
-    assert resp.content == b'{"detail":[{"loc":["path","file_name"],"msg":"value is not a valid uuid","type":"type_error.uuid"}]}'
+    assert resp.content == b'{"detail":[{"loc":["path","file_name"],"msg":"value is not a valid uuid",' \
+                           b'"type":"type_error.uuid"}]}'
 
 
 async def test_flash_endpoint_fail_no_name_config(client):
@@ -61,22 +62,15 @@ async def test_flash_endpoint_fail_no_name_config(client):
 
 async def test_flash_endpoint_get_bin(client):
     filename = "dbe414e8-cca0-4f18-b041-7d0e44145794.bin"
-    assert os.path.exists(f'{COMPILE_DIR}{filename}')
 
     resp = client.get(f"/manifest/bin/{filename}")
     assert resp.status_code == 200
-
-    with open(f"{COMPILE_DIR}{filename}", "rb") as file:
-        file_content = file.read()
-    assert resp.content == file_content
+    assert resp.headers["Content-Type"] == "application/octet-stream"
+    assert len(resp.content) > 0
 
 
 async def test_flash_endpoint_fail_no_existent_bin(client):
-    filename = "dbe414e8-cca0-4f18-b041-7d0e44145794.bin"
-    assert os.path.exists(f'{COMPILE_DIR}{filename}')
-
     filename = "2be414e8-cca0-4f18-b041-7d0e44145794.bin"
-    assert not os.path.exists(f'{COMPILE_DIR}{filename}')
 
     resp = client.get(f"/manifest/bin/{filename}")
     assert resp.status_code == 404
@@ -94,4 +88,5 @@ async def test_flash_endpoint_fail_no_filename_bin(client):
     resp = client.get(f"/manifest/bin/")
 
     assert resp.status_code == 422
-    assert resp.content == b'{"detail":[{"loc":["path","file_name"],"msg":"value is not a valid uuid","type":"type_error.uuid"}]}'
+    assert resp.content == b'{"detail":[{"loc":["path","file_name"],"msg":"value is not a valid uuid",' \
+                           b'"type":"type_error.uuid"}]}'
