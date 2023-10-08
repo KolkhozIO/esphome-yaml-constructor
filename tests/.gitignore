@@ -1,3 +1,11 @@
 *
 !testone.yaml
-!test_compil.py
+!conftest.py
+!manifest.json
+!test_config_router.py
+!test_favourites_router.py
+!test_flash_router.py
+!test_googleauth_router.py
+!test_share_router.py
+!settings.py
+!settings_tests.py

@@ -20,6 +20,18 @@ async def create_favourites(
         db: AsyncSession = Depends(get_db),
         current_user: User = Depends(get_current_user_from_token)
 ):
+    json_text = await request.json()
+    if json_text is None:
+        return JSONResponse(
+            status_code=404,
+            content={"message": f"Configuration was not sent"},
+        )
+    if 'esphome' not in json_text or json_text['esphome'].get('name') == 'None' or json_text['esphome'].get(
+            'name') == '':
+        return JSONResponse(
+            status_code=404,
+            content={"message": f"esphhome name item not filled"},
+        )
     info_save_config = await save_config_json(request, db)
     name_config = info_save_config['name_config']
     name_esphome = info_save_config['name_esphome']
@@ -46,6 +58,16 @@ async def delete_favourites(
         db: AsyncSession = Depends(get_db),
         current_user: User = Depends(get_current_user_from_token)
 ):
+    info_favourites = await _execute_function(FavouritesDAL,
+                                              FavouritesDAL.get_favourites_by_name_config,
+                                              session=db,
+                                              user_id=current_user.user_id,
+                                              name_config=name_config)
+    if info_favourites is None:
+        return JSONResponse(
+            status_code=404,
+            content={"message": f"Configuration with this name does not exist."},
+        )
     return await _execute_function(FavouritesDAL,
                                    FavouritesDAL.delete_favourites,
                                    session=db,
@@ -77,7 +99,10 @@ async def get_favourites_json_by_id(
                                                       user_id=current_user.user_id,
                                                       name_config=name_config)
     if favourites_availability is None:
-        raise HTTPException(status_code=404, detail=f"Favorites with the name of the {name_config} are not found.")
+        return JSONResponse(
+            status_code=404,
+            content={"message": f"Favorites with the name of the {name_config} are not found."}
+        )
     info_config = await _execute_function(ConfigDAL,
                                           ConfigDAL.get_config,
                                           session=db,
@@ -95,6 +120,17 @@ async def update_user_by_id(
         db: AsyncSession = Depends(get_db),
         current_user: User = Depends(get_current_user_from_token)
 ):
+    json_text = await request.json()
+    if json_text is None:
+        return JSONResponse(
+            status_code=404,
+            content={"message": f"Configuration was not sent"},
+        )
+    if 'esphome' not in json_text or json_text['esphome'].get('name') is None:
+        return JSONResponse(
+            status_code=404,
+            content={"message": f"esphhome name item not filled"},
+        )
     await _execute_function(FavouritesDAL,
                             FavouritesDAL.delete_favourites,
                             session=db,

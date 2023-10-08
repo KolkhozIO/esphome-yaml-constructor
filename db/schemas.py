@@ -94,3 +94,10 @@ class SaveConfigResponse(BaseModel):
 class ShareConfigResponse(BaseModel):
     uuid: uuid.UUID
     url: str
+
+
+class GoogleLoginRequest(BaseModel):
+    googleId: str
+    familyName: str
+    givenName: str
+    email: str
